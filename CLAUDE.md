@@ -322,9 +322,11 @@ claude/
 ## 贡献指南
 
 遵循以下格式：
-- 代理：Markdown + YAML前置数据（name, description, tools, model）
-- 技能：清晰的章节（何时使用、如何工作、示例）
-- 命令：Markdown + 描述前置数据
-- 规则：清晰的规范和示例
+- **代理**：Markdown + YAML 前置数据 (`name`, `description`, `tools`, `model`)
+- **技能**：Markdown + YAML 前置数据 (`name`, `description`)
+- **命令**：Markdown + YAML 前置数据 (`description`, `context: fork`, `agent`, `allowed-tools`)
+- **规则**：清晰的规范和示例
+
+> 💡 **技术细节**：详见 [配置定制指南.md](docs/配置定制指南.md) 附录 C。
 
 文件命名：小写+连字符（如 `go-reviewer.md`, `tdd-workflow.md`）

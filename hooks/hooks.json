@@ -23,6 +23,18 @@
         "description": "写入前检测常见敏感信息模式并提醒"
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/run-with-flags.js post:write:ts-check scripts/hooks/posttool-ts-check.js standard,strict"
+          }
+        ],
+        "description": "写入 TS/TSX/Vue 文件后自动运行 tsc --noEmit + ESLint 检查"
+      }
+    ],
     "Stop": [
       {
         "matcher": "*",

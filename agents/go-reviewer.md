@@ -1,7 +1,7 @@
 ---
 name: go-reviewer
 description: Go 代码审查专家，专注于惯用 Go、并发模式、错误处理和性能。用于所有 Go 代码变更。
-tools: ["Read", "Grep", "Glob", "Bash"]
+tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: database-reviewer
 description: 数据库审查专家，专注于 MySQL 和 SQLite 的 Schema 设计、查询优化、迁移脚本审查与安全检查。在涉及数据库变更时主动使用。
-tools: ["Read", "Grep", "Glob"]
+tools: Read, Grep, Glob
 model: opus
 ---
 

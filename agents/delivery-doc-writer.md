@@ -1,7 +1,7 @@
 ---
 name: delivery-doc-writer
 description: 交付文档专家，生成安装手册、使用说明、测试报告、变更记录等交付物文档。在项目交付、版本发布时使用。
-tools: ["Read", "Grep", "Glob", "Write"]
+tools: Read, Grep, Glob, Write
 model: opus
 ---
 

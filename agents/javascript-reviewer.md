@@ -1,7 +1,7 @@
 ---
 name: javascript-reviewer
 description: JavaScript/TypeScript 代码审查专家，专注于 ES6+ 惯用法、异步模式、类型安全、安全和性能。用于所有 JavaScript/TypeScript 代码变更。
-tools: ["Read", "Grep", "Glob", "Bash"]
+tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 

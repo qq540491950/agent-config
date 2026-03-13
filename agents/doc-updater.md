@@ -1,7 +1,7 @@
 ---
 name: doc-updater
 description: 文档更新专家。主动用于代码变更后的 README、使用说明、环境变量和流程文档同步。
-tools: ["Read", "Grep", "Glob", "Edit", "Bash"]
+tools: Read, Grep, Glob, Edit, Bash
 model: sonnet
 ---
 

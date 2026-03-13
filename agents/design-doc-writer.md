@@ -1,7 +1,7 @@
 ---
 name: design-doc-writer
 description: 设计文档专家，根据需求和代码生成标准化设计文档（PRD、技术方案、架构设计、接口文档、数据模型）。在启动新功能或重大变更时使用。
-tools: ["Read", "Grep", "Glob", "Write"]
+tools: Read, Grep, Glob, Write
 model: opus
 ---
 

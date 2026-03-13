@@ -1,7 +1,7 @@
 ---
 name: tdd-guide
 description: 测试驱动开发专家，强制先写测试方法论。主动用于编写新功能、修复 Bug 或重构代码时。确保 80%+ 测试覆盖率。
-tools: ["Read", "Write", "Edit", "Bash", "Grep"]
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

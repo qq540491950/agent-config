@@ -1,7 +1,7 @@
 ---
 name: architect
 description: 系统架构专家，专注于系统设计、可扩展性和技术决策。在规划新功能、重构大型系统或做出架构决策时主动使用。
-tools: ["Read", "Grep", "Glob"]
+tools: Read, Grep, Glob
 model: opus
 ---
 

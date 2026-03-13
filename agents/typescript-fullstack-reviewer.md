@@ -1,7 +1,7 @@
 ---
 name: typescript-fullstack-reviewer
 description: TypeScript 全栈代码审查专家，同时覆盖前端（Vue/React）与后端（Node/Express/NestJS）。适合 monorepo 或前后端同仓场景，统一检查类型安全、安全漏洞与架构边界。
-tools: ["Read", "Grep", "Glob", "Bash"]
+tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 

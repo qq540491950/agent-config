@@ -1,7 +1,7 @@
 ---
 name: e2e-runner
 description: E2E 测试专家。主动用于关键用户流程测试生成、执行与失败定位（Playwright）。
-tools: ["Read", "Grep", "Glob", "Edit", "Bash"]
+tools: Read, Grep, Glob, Edit, Bash
 model: sonnet
 ---
 

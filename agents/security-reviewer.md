@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: 安全漏洞检测和修复专家。主动用于编写处理用户输入、认证、API 端点或敏感数据的代码后。检测密钥、SSRF、注入、不安全加密和 OWASP Top 10 漏洞。
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: ["Read", "Bash", "Grep", "Glob"]
 model: sonnet
 ---
 

@@ -5,10 +5,10 @@ const path = require('path')
 const root = path.resolve(__dirname, '..')
 
 const expectedCounts = {
-  agents: 17,
-  commands: 31,
+  agents: 18,
+  commands: 32,
   contexts: 3,
-  skills: 17,
+  skills: 19,
 }
 
 function read(file) {

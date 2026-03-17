@@ -63,13 +63,17 @@ const requiredFiles = [
   'skills/delivery-patterns/SKILL.md',
   'skills/docker-patterns/SKILL.md',
   'skills/deployment-patterns/SKILL.md',
+  'agents/typescript-fullstack-reviewer.md',
+  'commands/ucc-typescript-fullstack-review.md',
+  'skills/typescript-patterns/SKILL.md',
+  'skills/typescript-testing/SKILL.md',
 ]
 
 const expectedCounts = {
-  agents: 17,
-  commands: 31,
+  agents: 18,
+  commands: 32,
   contexts: 3,
-  skills: 17,
+  skills: 19,
 }
 
 function checkExists(file) {

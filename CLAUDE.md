@@ -30,8 +30,8 @@
 ```
 ./
 ├── CLAUDE.md              # 主入口配置
-├── agents/                # 专业代理定义（17个）
-├── commands/              # 斜杠命令（31个）
+├── agents/                # 专业代理定义（18个）
+├── commands/              # 斜杠命令（32个）
 ├── contexts/              # 动态上下文注入（3个模式）
 │   ├── dev.md             # 开发模式上下文
 │   ├── review.md          # 审查模式上下文
@@ -41,7 +41,7 @@
 │   ├── javascript/        # JavaScript 规则（5个文件）
 │   ├── typescript/        # TypeScript/Vue 规则（5个文件）
 │   └── golang/            # Go 规则（5个文件）
-├── skills/                # 工作流定义和领域知识（17个）
+├── skills/                # 工作流定义和领域知识（19个）
 ├── mcp-configs/           # MCP 服务配置模板
 │   └── mcp-servers.json   # 推荐的 MCP 服务配置
 ├── examples/              # 项目模板示例
@@ -83,7 +83,7 @@
 | 语言 | 规则文件 | Skills | 代理 |
 |------|---------|--------|------|
 | **JavaScript** | 5个（含 hooks） | javascript-patterns, node-backend-patterns | javascript-reviewer |
-| **TypeScript/Vue** | 5个（含 hooks） | frontend-patterns | typescript-reviewer |
+| **TypeScript/Vue** | 5个（含 hooks） | frontend-patterns, typescript-patterns, typescript-testing | typescript-reviewer, typescript-fullstack-reviewer |
 | **TypeScript/Node** | 5个（含 hooks） | node-backend-patterns | typescript-backend-reviewer |
 | **Golang** | 5个（含 hooks） | golang-patterns, golang-testing | go-reviewer, go-build-resolver |
 
@@ -108,6 +108,7 @@
 | database-reviewer | MySQL/SQLite 数据库审查 | 数据库变更、SQL 优化 |
 | design-doc-writer | 设计文档生成 | 新功能启动、技术评审 |
 | delivery-doc-writer | 交付文档生成 | 项目交付、版本发布 |
+| typescript-fullstack-reviewer | TypeScript 全栈代码审查 | 全栈 TS 项目 |
 
 ## 代理协调
 
@@ -185,6 +186,7 @@
 | `/ucc-javascript-review` | JavaScript/TypeScript/Vue 代码审查 |
 | `/ucc-typescript-review` | TypeScript/Vue 前端代码审查 |
 | `/ucc-typescript-backend-review` | TypeScript/Node 后端代码审查 |
+| `/ucc-typescript-fullstack-review` | TypeScript 全栈代码审查 |
 | `/ucc-go-review` | Go 代码审查 |
 | `/ucc-go-test` | Go TDD 工作流（表驱动测试） |
 | `/ucc-go-build` | Go 构建错误修复 |

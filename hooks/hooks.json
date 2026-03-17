@@ -33,6 +33,16 @@
           }
         ],
         "description": "写入 TS/TSX/Vue 文件后自动运行 tsc --noEmit + ESLint 检查"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/run-with-flags.js post:write:go-check scripts/hooks/posttool-go-check.js standard,strict"
+          }
+        ],
+        "description": "写入 .go 文件后自动运行 go vet + gofmt 检查（staticcheck 可选）"
       }
     ],
     "Stop": [

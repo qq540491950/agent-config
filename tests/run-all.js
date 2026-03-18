@@ -9,6 +9,8 @@ const tests = [
   'tests/hooks-json.test.js',
   'tests/metadata-integrity.test.js',
   'tests/command-namespace.test.js',
+  'tests/team-workflow.test.js',
+  'tests/copy-config.test.js',
 ]
 
 for (const test of tests) {

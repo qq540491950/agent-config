@@ -8,6 +8,7 @@
 
 | 任务类型 | 首选代理 | 备选代理 |
 |---------|---------|---------|
+| 显式团队交付流程 | `team-orchestrator` | `planner` |
 | 复杂功能规划 | `planner` | - |
 | 新功能开发 | `tdd-guide` | `planner` |
 | 代码审查 | `code-reviewer` | 语言专用 reviewer |
@@ -24,6 +25,7 @@
 
 **主动触发（无需用户请求）：**
 
+- 使用 `/ucc-team*` → 优先调用 `team-orchestrator`
 - 代码编写完成 → 立即调用 `code-reviewer`
 - 安全敏感代码 → 立即调用 `security-reviewer`
 - 构建或类型检查失败 → 立即调用 `build-error-resolver`
@@ -34,6 +36,7 @@
 - 复杂功能需求 → 调用 `planner`
 - TDD 开发流程 → 调用 `tdd-guide`
 - E2E 测试执行 → 调用 `e2e-runner`
+- 显式团队入口 `/ucc-team*` → 调用 `team-orchestrator`
 
 ## 并行执行策略
 
@@ -57,7 +60,7 @@
 以下操作有依赖关系，必须顺序执行：
 
 ```
-planner → tdd-guide → 实现 → code-reviewer → 修复 → 验证
+team-orchestrator → planner → tdd-guide → 实现 → code-reviewer → 修复 → 验证
 ```
 
 ## 代理输出规范

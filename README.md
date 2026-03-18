@@ -16,7 +16,21 @@ node ai-config/scripts/copy-config.js <你的项目目录>
 
 # 方式二：手动复制
 cp ai-config/CLAUDE.md your-project/
-cp -r ai-config/{rules,agents,commands,skills,contexts} your-project/.claude/
+cp -r ai-config/{README.md,rules,agents,commands,skills,contexts,hooks,scripts,mcp-configs,docs,tests} your-project/.claude/
+cp ai-config/hooks/project-settings.json your-project/.claude/settings.json
+```
+
+复制完成后的目标结构应为：
+
+```text
+your-project/
+├── CLAUDE.md
+└── .claude/
+    ├── commands/
+    ├── agents/
+    ├── skills/
+    ├── scripts/
+    └── settings.json
 ```
 
 ### 2. 修改编码规范（可选但建议）
@@ -32,21 +46,17 @@ cp -r ai-config/{rules,agents,commands,skills,contexts} your-project/.claude/
 ### 3. 开始使用
 
 ```bash
-# 规划功能
-/ucc-plan "添加用户通知功能"
+# 标准团队流程
+/ucc-team "添加用户通知功能"
 
-# 测试驱动开发
-/ucc-tdd
+# 小步快改
+/ucc-team-fast "修复登录页按钮禁用状态"
 
-# 代码审查
-/ucc-code-review
-
-# 生成设计文档
-/ucc-design-doc 技术方案
-
-# 生成交付文档
-/ucc-delivery-doc 安装手册
+# 高风险严格流程
+/ucc-team-strict "重构权限校验链路"
 ```
+
+看到输出末尾出现 `配置标识：UCC`，说明当前会话已命中 UCC。
 
 ---
 
@@ -54,8 +64,8 @@ cp -r ai-config/{rules,agents,commands,skills,contexts} your-project/.claude/
 
 ```
 ai-config/
-├── CLAUDE.md                    # 主配置文件（放项目根目录）
-├── README.md                    # 本指南
+├── CLAUDE.md                    # 主配置文件（复制到项目根目录）
+├── README.md                    # 本指南（复制到项目的 .claude/README.md）
 │
 ├── contexts/                    # 工作模式（3个）
 ├── rules/                       # 编码规范（团队最常改的部分）
@@ -64,9 +74,9 @@ ai-config/
 │   ├── javascript/              # JavaScript 规范
 │   └── typescript/              # TypeScript/Vue 规范
 │
-├── agents/                      # 代理（17个）
-├── commands/                    # 斜杠命令（31个）
-├── skills/                      # 技能模块（17个）
+├── agents/                      # 代理（19个）
+├── commands/                    # 斜杠命令（38个）
+├── skills/                      # 技能模块（19个）
 ├── mcp-configs/                 # MCP 服务配置（需替换密钥占位符）
 ├── hooks/                       # 可选安全钩子
 ├── scripts/                     # 工具脚本
@@ -84,8 +94,11 @@ ai-config/
 
 | 命令 | 用途 | 何时用 |
 |------|------|--------|
-| `/ucc-plan` | 实现规划 | 新功能、重大变更前 |
-| `/ucc-tdd` | TDD 开发 | 写代码时 |
+| `/ucc-team` | 标准团队交付流程 | 默认入口；新功能、重构、常规修复 |
+| `/ucc-team-fast` | 快速开发流程 | 小改动、低风险修复、短链路交付 |
+| `/ucc-team-strict` | 严格交付流程 | 核心模块、高风险改动、多人协作 |
+| `/ucc-plan` | 实现规划 | 需要单独规划时 |
+| `/ucc-tdd` | TDD 开发 | 需要手动进入测试驱动时 |
 | `/ucc-code-review` | 代码审查 | 写完代码后 |
 | `/ucc-build-fix` | 修复构建错误 | 构建失败时 |
 | `/ucc-verify` | 综合验证 | 提交前 |
@@ -94,6 +107,14 @@ ai-config/
 | `/ucc-loop-start` | 启动验证循环 | 大改后或演示前 |
 | `/ucc-loop-status` | 查看验证状态 | 循环运行中 |
 | `/ucc-model-route` | 检查模型路由 | 模型策略调整前 |
+
+### 团队入口
+
+| 命令 | 用途 | 何时用 |
+|------|------|--------|
+| `/ucc-team-review` | 团队代码审查入口 | PR 审查、提交前审查 |
+| `/ucc-team-research` | 团队调研入口 | 技术选型、问题定位、方案比较 |
+| `/ucc-team-doc` | 团队文档入口 | 设计文档、交付文档、变更说明 |
 
 ### 文档输出
 
@@ -149,9 +170,11 @@ docs: 更新配置定制指南
 
 ### 排查"配置不生效"
 
-1. 在请求中加上 `@ucc`
+1. 优先使用 `/ucc-team`、`/ucc-team-fast` 或其他 `/ucc-team-*` 显式入口
 2. 检查输出末尾是否出现 `配置标识：UCC`
-3. 如果没出现 → 配置未加载，检查文件位置
+3. 若没有出现，确认项目根目录存在 `CLAUDE.md`
+4. 确认项目内存在 `.claude/settings.json`、`.claude/commands/`、`.claude/agents/`
+5. 如果仍未命中，再在请求中补充 `@ucc`
 
 ### 注意事项
 
@@ -181,6 +204,7 @@ docs: 更新配置定制指南
 - **v2.3.0** - 新增 MCP 配置、3 代理、6 命令、2 技能、项目模板
 - **v3.0.0** - 新增数据库审查、设计/交付文档、Docker/部署技能、质量门禁、CI/CD 管道
 - **v3.1.0** - 增量支持前后端 TypeScript 审查，新增 harness/loop/model-route 命令与 hook 运行时控制
+- **v3.2.0** - 新增 `/ucc-team*` 显式团队流程命令族、team-orchestrator 代理与项目级安装链路校验
 
 ---
 

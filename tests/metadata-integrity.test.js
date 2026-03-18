@@ -5,8 +5,8 @@ const path = require('path')
 const root = path.resolve(__dirname, '..')
 
 const expectedCounts = {
-  agents: 18,
-  commands: 32,
+  agents: 19,
+  commands: 38,
   contexts: 3,
   skills: 19,
 }

@@ -17,7 +17,9 @@
 
 ## 启用方式
 
-将 `hooks/hooks.json` 中的 `hooks` 字段合并到你的 `~/.claude/settings.json`，并确保上述 `scripts/hooks/*.js` 也一并复制到项目中：
+项目级部署时，推荐直接使用 `hooks/project-settings.json` 作为项目内 `.claude/settings.json`。`scripts/copy-config.js` 已默认执行这一步。
+
+如果只想启用最小 Hook 集，也可以将 `hooks/hooks.json` 中的 `hooks` 字段手动合并到你的 `.claude/settings.json`，并确保上述 `scripts/hooks/*.js` 也一并复制到项目中：
 
 ```json
 {
@@ -40,6 +42,8 @@
 内置 hook ID：
 - `pre:cmd:risk-blocker`
 - `pre:write:sensitive-check`
+- `post:write:ts-check`
+- `post:write:go-check`
 - `stop:delivery-reminder`
 
 示例：

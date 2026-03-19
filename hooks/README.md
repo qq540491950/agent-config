@@ -4,14 +4,14 @@
 
 - `PreToolUse`：阻断明显高风险的删除/格式化命令
 - `PreToolUse`：写入前检测常见敏感信息模式（提醒）
-- `Stop`：每次响应后提醒进行交付检查
+- `Stop`：每次响应后输出 workflow 摘要并提醒进行交付检查
 
 ## 文件
 
 - `hooks/hooks.json`：可直接复用的轻量 hooks 配置
 - `scripts/hooks/pretool-risk-blocker.js`：阻断高风险删除/格式化命令
 - `scripts/hooks/pretool-sensitive-write-check.js`：写入前敏感信息提醒
-- `scripts/hooks/stop-delivery-reminder.js`：结束阶段交付提醒
+- `scripts/hooks/stop-delivery-reminder.js`：结束阶段输出 workflow 摘要和交付提醒
 - `scripts/hooks/run-with-flags.js`：运行时控制封装器
 - `scripts/lib/hook-flags.js`：Hook 运行时控制解析
 
@@ -61,4 +61,4 @@ export ECC_DISABLED_HOOKS=stop:delivery-reminder
 - 阻断通过 `exit code 2` 实现（仅 PreToolUse 生效）
 - 提醒为非阻断输出（stderr）
 - 使用 Node.js 脚本，兼容 Windows / macOS / Linux
-- 团队模式可结合 `/ucc-update-docs` 与 `/ucc-e2e` 形成更完整交付门禁
+- 团队模式可结合 `/ucc-flow-team-standard`、`/ucc-flow-team-doc` 与 `/ucc-e2e` 形成更完整交付门禁

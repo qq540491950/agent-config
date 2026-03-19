@@ -54,7 +54,7 @@
             "command": "node .claude/scripts/hooks/run-with-flags.js stop:delivery-reminder .claude/scripts/hooks/stop-delivery-reminder.js standard,strict"
           }
         ],
-        "description": "每次响应后给出最小交付检查提醒"
+        "description": "每次响应后给出 workflow 摘要与最小交付检查提醒"
       }
     ]
   }

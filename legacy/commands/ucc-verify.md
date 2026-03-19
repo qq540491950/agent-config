@@ -1,45 +1,38 @@
 ---
 description: 对当前代码库状态运行全面验证。
+workflowCapable: true
+workflowProfile: single.dev
+workflowNode: verify
+approvalMode: stage
+triggerVisibility: always
 ---
 
 # Verify 命令
 
 对当前代码库状态运行全面验证。
 
+## workflow 要求
+
+- 若当前存在兼容 workflow run，优先加入当前 run 的 `verify` 节点
+- 若不存在活动 run，则创建 `single.dev` run 并从 `verify` 节点开始
+- 必须显示触发链、当前节点、下一节点和审批状态
+
 ## 指令
 
 按以下确切顺序执行验证：
 
 1. **构建检查**
-   - 运行此项目的构建命令
-   - 如失败，报告错误并停止
-
 2. **类型检查**
-   - 运行 TypeScript/类型检查器（Vue 项目优先 `vue-tsc --noEmit`）
-   - 报告所有错误及 file:line
-
 3. **代码检查**
-   - 运行 linter
-   - 报告警告和错误
-
 4. **测试套件**
-   - 运行所有测试
-   - 报告通过/失败数量
-   - 报告覆盖率百分比
-
 5. **Console.log 审计**
-   - 在源文件中搜索 console.log
-   - 报告位置
-
 6. **Git 状态**
-   - 显示未提交的更改
-   - 显示上次提交后修改的文件
 
 ## 输出
 
 生成简洁的验证报告：
 
-```
+```text
 验证结果: [通过/失败]
 
 构建:    [OK/失败]
@@ -51,8 +44,6 @@ description: 对当前代码库状态运行全面验证。
 
 可提交 PR: [是/否]
 ```
-
-如有任何关键问题，列出并提供修复建议。
 
 ## 参数
 

@@ -2,11 +2,22 @@
 description: 团队文档入口。按文档类型确认、上下文收集、生成与一致性校对的流程完成文档工作。
 context: fork
 agent: team-orchestrator
+workflowCapable: true
+workflowProfile: team.doc
+workflowNode: doc-type
+approvalMode: stage
+triggerVisibility: always
 ---
 
 # UCC Team Doc 命令
 
 这是面向设计文档、交付文档和变更说明的显式入口。
+
+## workflow 要求
+
+- 启动时必须调用 workflow runtime 创建或加入 `team.doc` run
+- 必须显示触发链、当前节点、下一节点和审批状态
+- 每完成一个阶段后默认进入 `awaiting_approval`
 
 ## 固定流程
 

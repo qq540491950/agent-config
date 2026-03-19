@@ -10,6 +10,8 @@ const tests = [
   'tests/metadata-integrity.test.js',
   'tests/command-namespace.test.js',
   'tests/team-workflow.test.js',
+  'tests/workflow-command-metadata.test.js',
+  'tests/workflow-runtime.test.js',
   'tests/copy-config.test.js',
 ]
 

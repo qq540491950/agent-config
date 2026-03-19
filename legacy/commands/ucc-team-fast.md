@@ -2,6 +2,11 @@
 description: 快速开发流程入口。以最小计划、快速实施、最小验证为主，适合小改动和短链路交付。
 context: fork
 agent: team-orchestrator
+workflowCapable: true
+workflowProfile: team.fast
+workflowNode: clarify
+approvalMode: stage
+triggerVisibility: always
 ---
 
 # UCC Team Fast 命令
@@ -14,6 +19,12 @@ agent: team-orchestrator
 - 低风险 Bug 修复
 - 需求明确的小步快改
 - 需要快速推进，但仍要保留最小流程约束
+
+## workflow 要求
+
+- 启动时必须调用 workflow runtime 创建或加入 `team.fast` run
+- 必须显示触发链、当前节点、下一节点和审批状态
+- 每完成一个阶段后默认进入 `awaiting_approval`
 
 ## 固定流程
 

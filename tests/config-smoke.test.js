@@ -8,14 +8,20 @@ const mustHave = [
   'agents/doc-updater.md',
   'agents/e2e-runner.md',
   'agents/team-orchestrator.md',
-  'commands/ucc-update-docs.md',
+  'agents/workflow-orchestrator.md',
   'commands/ucc-e2e.md',
-  'commands/ucc-team.md',
-  'commands/ucc-team-fast.md',
-  'commands/ucc-team-strict.md',
-  'commands/ucc-team-review.md',
-  'commands/ucc-team-research.md',
-  'commands/ucc-team-doc.md',
+  'commands/ucc-flow-team-standard.md',
+  'commands/ucc-flow-team-fast.md',
+  'commands/ucc-flow-team-strict.md',
+  'commands/ucc-flow-team-review.md',
+  'commands/ucc-flow-team-research.md',
+  'commands/ucc-flow-team-doc.md',
+  'commands/ucc-flow-single-dev.md',
+  'commands/ucc-flow-single-review.md',
+  'commands/ucc-flow-single-research.md',
+  'commands/ucc-flow-status.md',
+  'commands/ucc-flow-continue.md',
+  'commands/ucc-flow-abort.md',
   'rules/javascript/coding-style.md',
   'rules/javascript/security.md',
   'rules/javascript/testing.md',
@@ -29,15 +35,36 @@ const mustHave = [
   'commands/ucc-db-review.md',
   'commands/ucc-design-doc.md',
   'commands/ucc-delivery-doc.md',
-  'commands/ucc-quality-gate.md',
   'skills/design-doc-patterns/SKILL.md',
   'skills/delivery-patterns/SKILL.md',
   'skills/docker-patterns/SKILL.md',
   'skills/deployment-patterns/SKILL.md',
+  'workflows/definitions.json',
+  'scripts/lib/workflow-runtime.js',
+  'scripts/workflow/runner.js',
 ]
 
 for (const file of mustHave) {
   assert.ok(fs.existsSync(path.join(root, file)), `缺少文件: ${file}`)
 }
+
+;[
+  'commands/ucc-team.md',
+  'commands/ucc-team-fast.md',
+  'commands/ucc-team-strict.md',
+  'commands/ucc-team-review.md',
+  'commands/ucc-team-research.md',
+  'commands/ucc-team-doc.md',
+  'commands/ucc-flow.md',
+  'commands/ucc-flow-resume.md',
+  'commands/ucc-plan.md',
+  'commands/ucc-tdd.md',
+  'commands/ucc-code-review.md',
+  'commands/ucc-verify.md',
+  'commands/ucc-update-docs.md',
+  'commands/ucc-quality-gate.md',
+].forEach((file) => {
+  assert.ok(!fs.existsSync(path.join(root, file)), `旧公开命令应已移除: ${file}`)
+})
 
 console.log('config-smoke.test.js 通过')

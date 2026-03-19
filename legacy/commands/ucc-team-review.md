@@ -2,11 +2,22 @@
 description: 团队代码审查入口。按阅读上下文、发现报告、风险和后续建议的流程完成审查。
 context: fork
 agent: team-orchestrator
+workflowCapable: true
+workflowProfile: team.review
+workflowNode: collect-context
+approvalMode: stage
+triggerVisibility: always
 ---
 
 # UCC Team Review 命令
 
 这是面向团队代码审查的显式入口，适合 PR 审查、提交前审查和专项质量检查。
+
+## workflow 要求
+
+- 启动时必须调用 workflow runtime 创建或加入 `team.review` run
+- 必须显示触发链、当前节点、下一节点和审批状态
+- 每完成一个阶段后默认进入 `awaiting_approval`
 
 ## 固定流程
 

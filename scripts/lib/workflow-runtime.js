@@ -1,0 +1,757 @@
+#!/usr/bin/env node
+
+'use strict'
+
+const fs = require('fs')
+const path = require('path')
+const { ensureDir, appendFile, readFile, writeFile } = require('./utils')
+
+const ACTIVE_RUN_STATUSES = new Set(['running', 'paused', 'blocked', 'failed'])
+const FINAL_RUN_STATUSES = new Set(['completed', 'aborted'])
+const DEFAULT_EXECUTION_MODE = 'auto'
+const DEFAULT_PAUSE_POLICY = 'balanced'
+const LEGACY_APPROVAL_MODE = 'stage'
+const STALE_MS = 24 * 60 * 60 * 1000
+const DEFAULT_PAUSE_POLICIES = {
+  auto: ['build-failed', 'typecheck-failed', 'test-failed', 'dangerous-change', 'executor-error', 'conflict'],
+  balanced: [
+    'build-failed',
+    'typecheck-failed',
+    'test-failed',
+    'dangerous-change',
+    'executor-error',
+    'conflict',
+    'db-migration',
+    'api-contract',
+    'auth-change',
+    'mass-rename',
+    'config-sensitive',
+    'doc-conflict',
+  ],
+  strict: [
+    'build-failed',
+    'typecheck-failed',
+    'test-failed',
+    'dangerous-change',
+    'executor-error',
+    'conflict',
+    'db-migration',
+    'api-contract',
+    'auth-change',
+    'mass-rename',
+    'config-sensitive',
+    'doc-conflict',
+    'quality-gate',
+    'security-high',
+    'coverage-low',
+    'major-dependency',
+  ],
+}
+
+function nowIso() {
+  return new Date().toISOString()
+}
+
+function readJson(filePath, fallback = null) {
+  const content = readFile(filePath)
+  if (!content) return fallback
+  try {
+    return JSON.parse(content)
+  } catch {
+    return fallback
+  }
+}
+
+function writeJson(filePath, value) {
+  writeFile(filePath, JSON.stringify(value, null, 2) + '\n')
+}
+
+function getPluginRoot(options = {}) {
+  return options.pluginRoot || process.env.CLAUDE_PLUGIN_ROOT || path.resolve(__dirname, '..', '..')
+}
+
+function getDefinitionsPath(options = {}) {
+  return path.join(getPluginRoot(options), 'workflows', 'definitions.json')
+}
+
+function loadDefinitions(options = {}) {
+  const definitions = readJson(getDefinitionsPath(options))
+  if (!definitions || !definitions.profiles) {
+    throw new Error('workflow definitions 不存在或格式无效')
+  }
+  return definitions
+}
+
+function getProjectRoot(options = {}) {
+  return options.projectRoot || process.cwd()
+}
+
+function getWorkflowRoot(options = {}) {
+  return path.join(getProjectRoot(options), '.claude', 'workflows')
+}
+
+function getWorkflowPaths(options = {}) {
+  const root = getWorkflowRoot(options)
+  return {
+    root,
+    runsDir: path.join(root, 'runs'),
+    eventsDir: path.join(root, 'events'),
+    locksDir: path.join(root, 'locks'),
+    activeFile: path.join(root, 'active.json'),
+  }
+}
+
+function ensureWorkflowLayout(options = {}) {
+  const paths = getWorkflowPaths(options)
+  ensureDir(paths.root)
+  ensureDir(paths.runsDir)
+  ensureDir(paths.eventsDir)
+  ensureDir(paths.locksDir)
+  return paths
+}
+
+function makeRunPath(runId, options = {}) {
+  return path.join(getWorkflowPaths(options).runsDir, `${runId}.json`)
+}
+
+function makeEventPath(runId, options = {}) {
+  return path.join(getWorkflowPaths(options).eventsDir, `${runId}.ndjson`)
+}
+
+function appendEvent(runId, event, options = {}) {
+  const eventPath = makeEventPath(runId, options)
+  appendFile(
+    eventPath,
+    JSON.stringify({
+      timestamp: nowIso(),
+      runId,
+      ...event,
+    }) + '\n',
+  )
+}
+
+function getProfile(definitions, profile) {
+  const value = definitions.profiles[profile]
+  if (!value) {
+    throw new Error(`未知 workflow profile: ${profile}`)
+  }
+  return value
+}
+
+function getNode(definitions, profile, nodeName) {
+  const profileDef = getProfile(definitions, profile)
+  const node = profileDef.nodes[nodeName]
+  if (!node) {
+    throw new Error(`workflow profile ${profile} 不包含节点 ${nodeName}`)
+  }
+  return node
+}
+
+function getModeForProfile(definitions, profile) {
+  return getProfile(definitions, profile).mode
+}
+
+function getPausePolicies(definitions) {
+  return definitions.pausePolicies || DEFAULT_PAUSE_POLICIES
+}
+
+function getPauseSignalsForPolicy(definitions, pausePolicy) {
+  const policies = getPausePolicies(definitions)
+  return Array.isArray(policies[pausePolicy]) ? policies[pausePolicy] : policies[DEFAULT_PAUSE_POLICY]
+}
+
+function normalizeTransition(definitions, currentProfile, transition) {
+  if (!transition) return null
+  const nextProfile = transition.profile || currentProfile
+  const nextNode = transition.node
+  if (!nextNode) {
+    throw new Error(`workflow transition 缺少 node: ${JSON.stringify(transition)}`)
+  }
+  getNode(definitions, nextProfile, nextNode)
+  return {
+    profile: nextProfile,
+    node: nextNode,
+  }
+}
+
+function renderTransition(transition, currentProfile) {
+  if (!transition) return '无'
+  if (transition.profile === currentProfile) return transition.node
+  return `${transition.profile}.${transition.node}`
+}
+
+function isStale(run) {
+  if (!run || !run.updatedAt) return false
+  const updatedAtMs = Date.parse(run.updatedAt)
+  if (Number.isNaN(updatedAtMs)) return false
+  return Date.now() - updatedAtMs > STALE_MS
+}
+
+function getActiveRunMeta(options = {}) {
+  const paths = ensureWorkflowLayout(options)
+  return readJson(paths.activeFile)
+}
+
+function setActiveRunMeta(meta, options = {}) {
+  const paths = ensureWorkflowLayout(options)
+  if (!meta) {
+    if (fs.existsSync(paths.activeFile)) {
+      fs.rmSync(paths.activeFile, { force: true })
+    }
+    return
+  }
+  writeJson(paths.activeFile, meta)
+}
+
+function loadRun(runId, options = {}) {
+  const run = readJson(makeRunPath(runId, options))
+  if (!run) {
+    throw new Error(`workflow run 不存在: ${runId}`)
+  }
+  return run
+}
+
+function saveRun(run, options = {}) {
+  run.updatedAt = nowIso()
+  writeJson(makeRunPath(run.runId, options), run)
+
+  if (ACTIVE_RUN_STATUSES.has(run.status)) {
+    setActiveRunMeta(
+      {
+        runId: run.runId,
+        profile: run.profile,
+        mode: run.mode,
+        currentNode: run.currentNode,
+        status: run.status,
+        updatedAt: run.updatedAt,
+      },
+      options,
+    )
+  } else if (FINAL_RUN_STATUSES.has(run.status)) {
+    const active = getActiveRunMeta(options)
+    if (active && active.runId === run.runId) {
+      setActiveRunMeta(null, options)
+    }
+  }
+
+  return run
+}
+
+function createRunId(profile) {
+  const compactProfile = String(profile || 'wf')
+    .replace(/[^a-z0-9]+/gi, '')
+    .toLowerCase()
+    .slice(0, 10)
+  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
+  const random = Math.random().toString(36).slice(2, 8)
+  return `wf_${stamp}_${compactProfile}_${random}`
+}
+
+function parseList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean)
+  }
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function normalizeExecutionMode(value) {
+  return value === 'manual' ? 'manual' : DEFAULT_EXECUTION_MODE
+}
+
+function normalizePausePolicy(definitions, value) {
+  const policy = String(value || DEFAULT_PAUSE_POLICY)
+  return getPausePolicies(definitions)[policy] ? policy : DEFAULT_PAUSE_POLICY
+}
+
+function getDefaultExecutionMode(profileDef, params = {}) {
+  if (params.executionMode) return normalizeExecutionMode(params.executionMode)
+  if (params.approvalMode === LEGACY_APPROVAL_MODE) return 'manual'
+  return normalizeExecutionMode(profileDef.executionModeDefault)
+}
+
+function getDefaultPausePolicy(definitions, profileDef, params = {}) {
+  return normalizePausePolicy(definitions, params.pausePolicy || profileDef.pausePolicyDefault)
+}
+
+function findProfileByCommand(definitions, command) {
+  if (!command) return null
+  const profiles = Object.entries(definitions.profiles)
+  for (const [profileName, profileDef] of profiles) {
+    if (profileDef.publicCommand === command) {
+      return {
+        profile: profileName,
+        node: profileDef.entryNode,
+        entryCommand: command,
+      }
+    }
+
+    const aliases = parseList(profileDef.legacyCommands)
+    if (aliases.includes(command)) {
+      return {
+        profile: profileName,
+        node: profileDef.entryNode,
+        entryCommand: command,
+      }
+    }
+  }
+  return null
+}
+
+function resolveStartRequest(definitions, params = {}) {
+  if (params.profile) {
+    const profileDef = getProfile(definitions, params.profile)
+    return {
+      profile: params.profile,
+      node: params.node || profileDef.entryNode,
+      entryCommand: params.entryCommand || params.entry || params.command || profileDef.publicCommand || params.profile,
+    }
+  }
+
+  const command = params.command || params.entryCommand || params.entry || ''
+  const resolved = findProfileByCommand(definitions, command)
+  if (!resolved) {
+    throw new Error(`未知 workflow 入口命令: ${command || '<empty>'}`)
+  }
+
+  return {
+    profile: resolved.profile,
+    node: params.node || resolved.node,
+    entryCommand: resolved.entryCommand,
+  }
+}
+
+function canJoinActiveRun(definitions, activeRun, profile, requestedNode) {
+  if (!activeRun) return false
+  if (!ACTIVE_RUN_STATUSES.has(activeRun.status)) return false
+  if (activeRun.profile === profile) return true
+  if (requestedNode) {
+    const profileDef = getProfile(definitions, activeRun.profile)
+    if (profileDef.nodes[requestedNode]) return true
+  }
+  return false
+}
+
+function computePauseState(definitions, run, signals, explicitReason = '') {
+  if (run.executionMode === 'manual') {
+    return {
+      shouldPause: true,
+      reason: explicitReason || 'manual-checkpoint',
+      signals,
+    }
+  }
+
+  if (signals.length === 0) {
+    return {
+      shouldPause: false,
+      reason: '',
+      signals: [],
+    }
+  }
+
+  const pauseSignals = new Set(getPauseSignalsForPolicy(definitions, run.pausePolicy))
+  const matchedSignals = signals.filter((signal) => pauseSignals.has(signal))
+  return {
+    shouldPause: matchedSignals.length > 0,
+    reason: explicitReason || matchedSignals[0] || '',
+    signals: matchedSignals,
+  }
+}
+
+function startRun(params = {}, options = {}) {
+  const definitions = loadDefinitions(options)
+  ensureWorkflowLayout(options)
+
+  const request = resolveStartRequest(definitions, params)
+  const profile = request.profile
+  const entryCommand = request.entryCommand || ''
+  const requestedNode = request.node
+  const profileDef = getProfile(definitions, profile)
+  const task = params.task || ''
+
+  const activeMeta = getActiveRunMeta(options)
+  if (activeMeta) {
+    const activeRun = loadRun(activeMeta.runId, options)
+    if (canJoinActiveRun(definitions, activeRun, profile, requestedNode)) {
+      if (entryCommand) {
+        activeRun.triggerChain.push(entryCommand)
+      }
+      activeRun.lastTrigger = {
+        entryCommand,
+        requestedProfile: profile,
+        requestedNode,
+        triggeredAt: nowIso(),
+      }
+      appendEvent(
+        activeRun.runId,
+        {
+          type: 'join',
+          entryCommand,
+          requestedProfile: profile,
+          requestedNode,
+        },
+        options,
+      )
+      saveRun(activeRun, options)
+      return {
+        action: 'joined',
+        run: activeRun,
+      }
+    }
+
+    return {
+      action: 'conflict',
+      run: activeRun,
+    }
+  }
+
+  const nodeDef = getNode(definitions, profile, requestedNode)
+  const firstTransition = normalizeTransition(definitions, profile, nodeDef.nextOnSuccess)
+  const run = {
+    runId: createRunId(profile),
+    mode: profileDef.mode,
+    profile,
+    entryCommand,
+    entryNode: requestedNode,
+    task,
+    triggerChain: [entryCommand || profile, profile, requestedNode].filter(Boolean),
+    currentNode: requestedNode,
+    currentPhase: nodeDef.phase,
+    nextNode: renderTransition(firstTransition, profile),
+    nextTransition: firstTransition,
+    status: 'running',
+    executionMode: getDefaultExecutionMode(profileDef, params),
+    pausePolicy: getDefaultPausePolicy(definitions, profileDef, params),
+    pauseState: {
+      required: false,
+      reason: '',
+      signals: [],
+      pausedAtNode: null,
+      lastContinuedNode: null,
+    },
+    artifacts: [],
+    history: [],
+    startedAt: nowIso(),
+    updatedAt: nowIso(),
+  }
+
+  saveRun(run, options)
+  appendEvent(
+    run.runId,
+    {
+      type: 'start',
+      profile,
+      entryCommand,
+      entryNode: requestedNode,
+      task,
+      executionMode: run.executionMode,
+      pausePolicy: run.pausePolicy,
+    },
+    options,
+  )
+
+  return {
+    action: 'started',
+    run,
+  }
+}
+
+function advanceRun(params = {}, options = {}) {
+  const definitions = loadDefinitions(options)
+  ensureWorkflowLayout(options)
+
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    throw new Error('advance 缺少 runId，且当前没有 active run')
+  }
+
+  const result = params.result || 'passed'
+  const summary = params.summary || ''
+  const artifacts = parseList(params.artifacts)
+  const signals = parseList(params.signals || params['pause-signals'])
+  const pauseReason = params.pauseReason || params['pause-reason'] || ''
+
+  const run = loadRun(runId, options)
+  const nodeDef = getNode(definitions, run.profile, run.currentNode)
+
+  run.history.push({
+    node: run.currentNode,
+    phase: run.currentPhase,
+    result,
+    summary,
+    artifacts,
+    signals,
+    completedAt: nowIso(),
+  })
+  run.artifacts.push(...artifacts)
+
+  if (result === 'failed') {
+    run.status = 'failed'
+    run.nextNode = '无'
+    run.nextTransition = null
+    run.pauseState = {
+      required: true,
+      reason: pauseReason || signals[0] || 'failed',
+      signals,
+      pausedAtNode: run.currentNode,
+      lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    appendEvent(run.runId, { type: 'advance', node: run.currentNode, result, summary, artifacts, signals }, options)
+    return {
+      action: 'failed',
+      run: saveRun(run, options),
+    }
+  }
+
+  if (result === 'blocked') {
+    const blockedTransition = normalizeTransition(definitions, run.profile, nodeDef.nextOnBlocked)
+    run.status = 'blocked'
+    run.nextNode = renderTransition(blockedTransition, run.profile)
+    run.nextTransition = blockedTransition
+    run.pauseState = {
+      required: true,
+      reason: pauseReason || signals[0] || 'blocked',
+      signals,
+      pausedAtNode: run.currentNode,
+      lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    appendEvent(run.runId, { type: 'advance', node: run.currentNode, result, summary, artifacts, signals }, options)
+    return {
+      action: 'blocked',
+      run: saveRun(run, options),
+    }
+  }
+
+  const nextTransition = normalizeTransition(definitions, run.profile, nodeDef.nextOnSuccess)
+  if (!nextTransition) {
+    const completedNode = run.currentNode
+    run.status = 'completed'
+    run.currentNode = null
+    run.currentPhase = null
+    run.nextNode = '无'
+    run.nextTransition = null
+    run.pauseState = {
+      required: false,
+      reason: '',
+      signals: [],
+      pausedAtNode: null,
+      lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    appendEvent(run.runId, { type: 'advance', node: completedNode, result, summary, artifacts, signals }, options)
+    return {
+      action: 'completed',
+      run: saveRun(run, options),
+    }
+  }
+
+  const previousProfile = run.profile
+  run.profile = nextTransition.profile
+  run.mode = getModeForProfile(definitions, nextTransition.profile)
+  run.currentNode = nextTransition.node
+  run.currentPhase = getNode(definitions, nextTransition.profile, nextTransition.node).phase
+  run.triggerChain.push(
+    ...(nextTransition.profile === previousProfile ? [] : [nextTransition.profile]),
+    nextTransition.node,
+  )
+
+  const nextNodeDef = getNode(definitions, nextTransition.profile, nextTransition.node)
+  const followingTransition = normalizeTransition(definitions, nextTransition.profile, nextNodeDef.nextOnSuccess)
+  run.nextNode = renderTransition(followingTransition, nextTransition.profile)
+  run.nextTransition = followingTransition
+
+  const pauseDecision = computePauseState(definitions, run, signals, pauseReason)
+  if (pauseDecision.shouldPause) {
+    run.status = 'paused'
+    run.pauseState = {
+      required: true,
+      reason: pauseDecision.reason,
+      signals: pauseDecision.signals,
+      pausedAtNode: run.currentNode,
+      lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+  } else {
+    run.status = 'running'
+    run.pauseState = {
+      required: false,
+      reason: '',
+      signals: [],
+      pausedAtNode: null,
+      lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+  }
+
+  appendEvent(
+    run.runId,
+    {
+      type: 'advance',
+      previousProfile,
+      nextProfile: run.profile,
+      nextNode: run.currentNode,
+      result,
+      summary,
+      artifacts,
+      signals,
+      pauseDecision,
+    },
+    options,
+  )
+
+  return {
+    action: run.status === 'paused' ? 'paused' : 'advanced',
+    run: saveRun(run, options),
+  }
+}
+
+function continueRun(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    return {
+      action: 'empty',
+      run: null,
+    }
+  }
+
+  const run = loadRun(runId, options)
+
+  if (run.status !== 'paused') {
+    return {
+      action: 'noop',
+      run,
+    }
+  }
+
+  run.status = 'running'
+  run.pauseState = {
+    required: false,
+    reason: '',
+    signals: [],
+    pausedAtNode: null,
+    lastContinuedNode: run.currentNode,
+  }
+
+  appendEvent(run.runId, { type: 'continue', node: run.currentNode }, options)
+
+  return {
+    action: 'continued',
+    run: saveRun(run, options),
+  }
+}
+
+function resumeRun(params = {}, options = {}) {
+  return continueRun(params, options)
+}
+
+function abortRun(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    return {
+      action: 'empty',
+      run: null,
+    }
+  }
+
+  const reason = params.reason || ''
+  const run = loadRun(runId, options)
+  run.status = 'aborted'
+  run.nextNode = '无'
+  run.nextTransition = null
+  appendEvent(run.runId, { type: 'abort', reason }, options)
+  return {
+    action: 'aborted',
+    run: saveRun(run, options),
+  }
+}
+
+function getRunStatus(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    return {
+      action: 'empty',
+      run: null,
+    }
+  }
+
+  const run = loadRun(runId, options)
+  return {
+    action: 'status',
+    run,
+  }
+}
+
+function formatRunSummary(run, options = {}) {
+  if (!run) {
+    return '当前没有活动 workflow run。'
+  }
+
+  const lines = []
+  const actionLabel = options.action ? `动作: ${options.action}` : null
+  const continueCommand = run.status === 'paused' ? `/ucc-flow-continue ${run.runId}` : '无'
+
+  if (actionLabel) lines.push(actionLabel)
+  lines.push(`触发来源: ${run.entryCommand || 'workflow-runtime'}`)
+  lines.push(`运行ID: ${run.runId}`)
+  lines.push(`触发链: ${run.triggerChain.join(' -> ')}`)
+  lines.push(`当前模式: ${run.profile}`)
+  lines.push(`当前节点: ${run.currentNode || '已完成'}`)
+  lines.push(`当前阶段: ${run.currentPhase || '已完成'}`)
+  lines.push(`下一节点: ${run.nextNode || '无'}`)
+  lines.push(`执行模式: ${run.executionMode || DEFAULT_EXECUTION_MODE}`)
+  lines.push(`暂停策略: ${run.pausePolicy || DEFAULT_PAUSE_POLICY}`)
+  lines.push(`暂停状态: ${run.status}`)
+  lines.push(`继续命令: ${continueCommand}`)
+  if (run.pauseState && run.pauseState.reason) {
+    lines.push(`暂停原因: ${run.pauseState.reason}`)
+  }
+  if (run.pauseState && Array.isArray(run.pauseState.signals) && run.pauseState.signals.length > 0) {
+    lines.push(`暂停信号: ${run.pauseState.signals.join(', ')}`)
+  }
+  lines.push(`状态更新时间: ${run.updatedAt}`)
+  if (isStale(run)) {
+    lines.push('Run 状态: stale')
+  }
+  return lines.join('\n')
+}
+
+module.exports = {
+  ACTIVE_RUN_STATUSES,
+  DEFAULT_EXECUTION_MODE,
+  DEFAULT_PAUSE_POLICY,
+  DEFAULT_PAUSE_POLICIES,
+  FINAL_RUN_STATUSES,
+  appendEvent,
+  advanceRun,
+  abortRun,
+  canJoinActiveRun,
+  continueRun,
+  ensureWorkflowLayout,
+  findProfileByCommand,
+  formatRunSummary,
+  getActiveRunMeta,
+  getDefinitionsPath,
+  getModeForProfile,
+  getNode,
+  getPausePolicies,
+  getProfile,
+  getRunStatus,
+  getWorkflowPaths,
+  getWorkflowRoot,
+  isStale,
+  loadDefinitions,
+  loadRun,
+  normalizePausePolicy,
+  normalizeTransition,
+  readJson,
+  renderTransition,
+  resolveStartRequest,
+  resumeRun,
+  saveRun,
+  setActiveRunMeta,
+  startRun,
+  writeJson,
+}

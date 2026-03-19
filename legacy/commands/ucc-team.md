@@ -2,6 +2,11 @@
 description: 标准团队交付流程入口。自动识别任务类型，并按澄清、计划、实施、验证、文档同步的阶段推进。
 context: fork
 agent: team-orchestrator
+workflowCapable: true
+workflowProfile: team.standard
+workflowNode: clarify
+approvalMode: stage
+triggerVisibility: always
 ---
 
 # UCC Team 命令
@@ -16,14 +21,22 @@ agent: team-orchestrator
 - 需要从需求到交付走完整闭环的任务
 - 团队成员不想自己判断该先用 `/ucc-plan` 还是 `/ucc-tdd` 时
 
+## workflow 要求
+
+- 启动时必须调用 workflow runtime 创建或加入 `team.standard` run
+- 必须显示触发链、当前节点、下一节点和审批状态
+- 每完成一个阶段后默认进入 `awaiting_approval`
+- 恢复时使用 `/ucc-flow-resume <runId>`
+
 ## 固定流程
 
 1. `当前阶段：需求澄清`
 2. `当前阶段：实现计划`
 3. `当前阶段：实施`
-4. `当前阶段：验证`
-5. `当前阶段：文档同步`
-6. `当前阶段：交付总结`
+4. `当前阶段：审查`
+5. `当前阶段：验证`
+6. `当前阶段：文档同步`
+7. `当前阶段：交付总结`
 
 如果任务明确是审查、调研或纯文档任务，可切换到对应轻量子流程，但仍必须显式说明当前阶段。
 

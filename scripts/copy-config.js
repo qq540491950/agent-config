@@ -16,12 +16,9 @@ const claudeDirItems = [
   'agents',
   'commands',
   'skills',
-  'contexts',
   'hooks',
   'scripts',
   'mcp-configs',
-  'docs',
-  'tests',
   'workflows',
 ]
 const settingsTemplate = path.join('hooks', 'project-settings.json')
@@ -239,7 +236,7 @@ async function main() {
   console.log('1. 在项目根目录打开 Claude Code')
   console.log('2. 先使用 /ucc-team-standard、/ucc-team-research 或 /ucc-single-standard 进入 UCC 自动化流程')
   console.log('3. 检查输出末尾是否出现 配置标识：UCC')
-  console.log('4. 如需校验配置资产，可在 .claude/ 下运行 node scripts/validate-config.js')
+  console.log('4. 如需校验已部署资产，可在项目根目录运行 node .claude/scripts/validate-config.js')
 }
 
 main().catch((err) => {

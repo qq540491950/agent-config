@@ -87,8 +87,10 @@ for (const file of mustHave) {
   'commands/ucc-typescript-backend-review.md',
   'commands/ucc-typescript-fullstack-review.md',
   'commands/ucc-typescript-review.md',
+  'contexts',
+  '.internal',
 ].forEach((file) => {
-  assert.ok(!fs.existsSync(path.join(root, file)), `不应再保留公开命令: ${file}`)
+  assert.ok(!fs.existsSync(path.join(root, file)), `不应再保留公开命令或退役目录: ${file}`)
 })
 
 assert.ok(!fs.existsSync(path.join(root, 'legacy')), 'legacy 目录应已清理')

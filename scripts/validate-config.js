@@ -1,80 +1,152 @@
 #!/usr/bin/env node
 
+'use strict'
+
 const fs = require('fs')
 const path = require('path')
 
 const root = path.resolve(__dirname, '..')
+const parentRoot = path.resolve(root, '..')
 
-const requiredFiles = [
-  'README.md',
-  'CLAUDE.md',
-  'docs/使用说明.md',
-  'docs/配置定制指南.md',
-  'hooks/README.md',
-  'hooks/hooks.json',
-  'hooks/project-settings.json',
-  'mcp-configs/mcp-servers.json',
-  'scripts/validate-config.js',
-  'scripts/copy-config.js',
-  'scripts/lib/workflow-runtime.js',
-  'scripts/lib/hook-flags.js',
-  'scripts/workflow/runner.js',
-  'scripts/hooks/pretool-risk-blocker.js',
-  'scripts/hooks/pretool-sensitive-write-check.js',
-  'scripts/hooks/stop-delivery-reminder.js',
-  'scripts/hooks/run-with-flags.js',
-  'tests/run-all.js',
-  'tests/team-workflow.test.js',
-  'tests/workflow-command-metadata.test.js',
-  'tests/workflow-runtime.test.js',
-  'tests/copy-config.test.js',
-  'tests/config-smoke.test.js',
-  'tests/metadata-integrity.test.js',
-  'tests/model-inheritance.test.js',
-  'tests/command-namespace.test.js',
-  'agents/team-orchestrator.md',
-  'agents/workflow-orchestrator.md',
-  'agents/doc-updater.md',
-  'agents/e2e-runner.md',
-  'agents/architect.md',
-  'agents/refactor-cleaner.md',
-  'agents/go-build-resolver.md',
-  'agents/typescript-reviewer.md',
-  'agents/typescript-backend-reviewer.md',
-  'agents/typescript-fullstack-reviewer.md',
-  'agents/database-reviewer.md',
-  'agents/design-doc-writer.md',
-  'agents/delivery-doc-writer.md',
-  'commands/ucc-team-standard.md',
-  'commands/ucc-team-strict.md',
-  'commands/ucc-team-research.md',
-  'commands/ucc-single-standard.md',
-  'commands/ucc-single-research.md',
-  'commands/ucc-flow-status.md',
-  'commands/ucc-flow-continue.md',
-  'commands/ucc-flow-abort.md',
-  'rules/javascript/coding-style.md',
-  'rules/javascript/security.md',
-  'rules/javascript/testing.md',
-  'rules/javascript/patterns.md',
-  'skills/node-backend-patterns/SKILL.md',
-  'skills/design-collaboration/SKILL.md',
-  'skills/continuous-learning/SKILL.md',
-  'skills/verification-loop/SKILL.md',
-  'skills/design-doc-patterns/SKILL.md',
-  'skills/delivery-patterns/SKILL.md',
-  'skills/docker-patterns/SKILL.md',
-  'skills/deployment-patterns/SKILL.md',
-  'skills/typescript-patterns/SKILL.md',
-  'skills/typescript-testing/SKILL.md',
-  'workflows/definitions.json',
-  'workflows/README.md',
-]
+function detectLayout() {
+  if (fs.existsSync(path.join(root, 'CLAUDE.md'))) {
+    return 'repo'
+  }
+
+  if (fs.existsSync(path.join(parentRoot, 'CLAUDE.md'))) {
+    return 'deployed'
+  }
+
+  throw new Error(`无法识别 validate-config.js 所在布局: ${root}`)
+}
+
+const layout = detectLayout()
+
+const requiredFilesByLayout = {
+  repo: [
+    'README.md',
+    'CLAUDE.md',
+    'docs/使用说明.md',
+    'docs/配置定制指南.md',
+    'hooks/README.md',
+    'hooks/hooks.json',
+    'hooks/project-settings.json',
+    'mcp-configs/mcp-servers.json',
+    'scripts/validate-config.js',
+    'scripts/copy-config.js',
+    'scripts/lib/workflow-runtime.js',
+    'scripts/lib/hook-flags.js',
+    'scripts/workflow/runner.js',
+    'scripts/hooks/pretool-risk-blocker.js',
+    'scripts/hooks/pretool-sensitive-write-check.js',
+    'scripts/hooks/stop-delivery-reminder.js',
+    'scripts/hooks/run-with-flags.js',
+    'tests/run-all.js',
+    'tests/team-workflow.test.js',
+    'tests/workflow-command-metadata.test.js',
+    'tests/workflow-runtime.test.js',
+    'tests/copy-config.test.js',
+    'tests/config-smoke.test.js',
+    'tests/metadata-integrity.test.js',
+    'tests/model-inheritance.test.js',
+    'tests/command-namespace.test.js',
+    'agents/team-orchestrator.md',
+    'agents/workflow-orchestrator.md',
+    'agents/doc-updater.md',
+    'agents/e2e-runner.md',
+    'agents/architect.md',
+    'agents/refactor-cleaner.md',
+    'agents/go-build-resolver.md',
+    'agents/typescript-reviewer.md',
+    'agents/typescript-backend-reviewer.md',
+    'agents/typescript-fullstack-reviewer.md',
+    'agents/database-reviewer.md',
+    'agents/design-doc-writer.md',
+    'agents/delivery-doc-writer.md',
+    'commands/ucc-team-standard.md',
+    'commands/ucc-team-strict.md',
+    'commands/ucc-team-research.md',
+    'commands/ucc-single-standard.md',
+    'commands/ucc-single-research.md',
+    'commands/ucc-flow-status.md',
+    'commands/ucc-flow-continue.md',
+    'commands/ucc-flow-abort.md',
+    'rules/javascript/coding-style.md',
+    'rules/javascript/security.md',
+    'rules/javascript/testing.md',
+    'rules/javascript/patterns.md',
+    'skills/node-backend-patterns/SKILL.md',
+    'skills/design-collaboration/SKILL.md',
+    'skills/continuous-learning/SKILL.md',
+    'skills/verification-loop/SKILL.md',
+    'skills/design-doc-patterns/SKILL.md',
+    'skills/delivery-patterns/SKILL.md',
+    'skills/docker-patterns/SKILL.md',
+    'skills/deployment-patterns/SKILL.md',
+    'skills/typescript-patterns/SKILL.md',
+    'skills/typescript-testing/SKILL.md',
+    'workflows/definitions.json',
+    'workflows/README.md',
+  ],
+  deployed: [
+    '../CLAUDE.md',
+    'README.md',
+    'hooks/README.md',
+    'hooks/hooks.json',
+    'hooks/project-settings.json',
+    'mcp-configs/mcp-servers.json',
+    'scripts/validate-config.js',
+    'scripts/copy-config.js',
+    'scripts/lib/workflow-runtime.js',
+    'scripts/lib/hook-flags.js',
+    'scripts/workflow/runner.js',
+    'scripts/hooks/pretool-risk-blocker.js',
+    'scripts/hooks/pretool-sensitive-write-check.js',
+    'scripts/hooks/stop-delivery-reminder.js',
+    'scripts/hooks/run-with-flags.js',
+    'agents/team-orchestrator.md',
+    'agents/workflow-orchestrator.md',
+    'agents/doc-updater.md',
+    'agents/e2e-runner.md',
+    'agents/architect.md',
+    'agents/refactor-cleaner.md',
+    'agents/go-build-resolver.md',
+    'agents/typescript-reviewer.md',
+    'agents/typescript-backend-reviewer.md',
+    'agents/typescript-fullstack-reviewer.md',
+    'agents/database-reviewer.md',
+    'agents/design-doc-writer.md',
+    'agents/delivery-doc-writer.md',
+    'commands/ucc-team-standard.md',
+    'commands/ucc-team-strict.md',
+    'commands/ucc-team-research.md',
+    'commands/ucc-single-standard.md',
+    'commands/ucc-single-research.md',
+    'commands/ucc-flow-status.md',
+    'commands/ucc-flow-continue.md',
+    'commands/ucc-flow-abort.md',
+    'rules/javascript/coding-style.md',
+    'rules/javascript/security.md',
+    'rules/javascript/testing.md',
+    'rules/javascript/patterns.md',
+    'skills/node-backend-patterns/SKILL.md',
+    'skills/design-collaboration/SKILL.md',
+    'skills/continuous-learning/SKILL.md',
+    'skills/verification-loop/SKILL.md',
+    'skills/design-doc-patterns/SKILL.md',
+    'skills/delivery-patterns/SKILL.md',
+    'skills/docker-patterns/SKILL.md',
+    'skills/deployment-patterns/SKILL.md',
+    'skills/typescript-patterns/SKILL.md',
+    'skills/typescript-testing/SKILL.md',
+    'workflows/definitions.json',
+    'workflows/README.md',
+  ],
+}
 
 const expectedCounts = {
   agents: 20,
   commands: 8,
-  contexts: 3,
   skills: 19,
 }
 
@@ -121,6 +193,7 @@ function requireFrontmatterKeys(file, keys) {
 }
 
 function validateRequiredFiles() {
+  const requiredFiles = requiredFilesByLayout[layout]
   const missing = requiredFiles.filter((file) => !checkExists(file))
   assert(missing.length === 0, `缺失文件:\n- ${missing.join('\n- ')}`)
 }
@@ -136,11 +209,6 @@ function validateDirectoryCounts() {
     `commands 数量不匹配，期望 ${expectedCounts.commands}，实际 ${listFiles('commands').length}`,
   )
 
-  assert(
-    listFiles('contexts').length === expectedCounts.contexts,
-    `contexts 数量不匹配，期望 ${expectedCounts.contexts}，实际 ${listFiles('contexts').length}`,
-  )
-
   const skillCount = fs
     .readdirSync(path.join(root, 'skills'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -154,12 +222,7 @@ function validateDirectoryCounts() {
 
 function validateAgentsFrontmatter() {
   for (const file of listFiles('agents')) {
-    requireFrontmatterKeys(path.posix.join('agents', file), [
-      'name',
-      'description',
-      'tools',
-      'model',
-    ])
+    requireFrontmatterKeys(path.posix.join('agents', file), ['name', 'description', 'tools', 'model'])
   }
 }
 
@@ -201,10 +264,7 @@ function validateCommandsFrontmatter() {
 function validateHooksJson() {
   const parsed = JSON.parse(readText('hooks/hooks.json'))
 
-  assert(
-    typeof parsed.$schema === 'string' && parsed.$schema.length > 0,
-    'hooks.json 缺少有效的 $schema',
-  )
+  assert(typeof parsed.$schema === 'string' && parsed.$schema.length > 0, 'hooks.json 缺少有效的 $schema')
   assert(parsed.hooks && typeof parsed.hooks === 'object', 'hooks.json 缺少 hooks 对象')
 
   for (const eventName of ['PreToolUse', 'Stop']) {
@@ -237,6 +297,10 @@ function validateHooksJson() {
 }
 
 function validateCustomizationGuideSnapshot() {
+  if (layout !== 'repo') {
+    return
+  }
+
   const guide = readText('docs/配置定制指南.md')
 
   const agentsMatch = guide.match(/agents\/\s+#\s*代理配置（(\d+)个）/)
@@ -291,6 +355,8 @@ function runStep(name, fn) {
 }
 
 function main() {
+  console.log(`校验布局: ${layout}`)
+
   const steps = [
     ['关键文件存在性', validateRequiredFiles],
     ['目录数量', validateDirectoryCounts],
@@ -299,8 +365,11 @@ function main() {
     ['Skill Frontmatter', validateSkillsFrontmatter],
     ['Command Frontmatter', validateCommandsFrontmatter],
     ['Hooks 结构', validateHooksJson],
-    ['文档快照一致性', validateCustomizationGuideSnapshot],
   ]
+
+  if (layout === 'repo') {
+    steps.push(['文档快照一致性', validateCustomizationGuideSnapshot])
+  }
 
   const errors = []
   for (const [name, fn] of steps) {

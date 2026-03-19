@@ -34,11 +34,21 @@ try {
     fs.existsSync(path.join(projectRoot, '.claude', 'workflows', 'definitions.json')),
     '.claude/workflows/definitions.json 未生成',
   )
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'docs')), '.claude/docs 不应默认复制')
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'tests')), '.claude/tests 不应默认复制')
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'contexts')), '.claude/contexts 不应默认复制')
   assert.ok(!fs.existsSync(path.join(projectRoot, 'README.md')), '配置 README 不应覆盖项目根 README.md')
   assert.ok(
     !fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-flow-team-standard.md')),
     '.claude/commands 不应再暴露旧的 ucc-flow-team-standard.md',
   )
+
+  const deployedValidateScript = path.join(projectRoot, '.claude', 'scripts', 'validate-config.js')
+  const validateResult = spawnSync('node', [deployedValidateScript], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  })
+  assert.strictEqual(validateResult.status, 0, validateResult.stderr || validateResult.stdout)
 
   const deployedScript = path.join(projectRoot, '.claude', 'scripts', 'copy-config.js')
   const redeployResult = spawnSync('node', [deployedScript, secondProjectRoot, '--force'], {

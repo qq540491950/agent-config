@@ -16,7 +16,7 @@ node ai-config/scripts/copy-config.js <你的项目目录>
 
 # 方式二：手动复制
 cp ai-config/CLAUDE.md your-project/
-cp -r ai-config/{README.md,rules,agents,commands,skills,contexts,hooks,scripts,mcp-configs,docs,tests,workflows} your-project/.claude/
+cp -r ai-config/{README.md,rules,agents,commands,skills,hooks,scripts,mcp-configs,workflows} your-project/.claude/
 cp ai-config/hooks/project-settings.json your-project/.claude/settings.json
 ```
 
@@ -67,7 +67,6 @@ your-project/
 ai-config/
 |-- CLAUDE.md                    # 主配置文件（复制到项目根目录）
 |-- README.md                    # 本指南（复制到项目的 .claude/README.md）
-|-- contexts/                    # 工作模式（3个）
 |-- rules/                       # 编码规范
 |-- agents/                      # 代理配置（20个）
 |-- commands/                    # 公开斜杠命令（8个）
@@ -75,8 +74,8 @@ ai-config/
 |-- mcp-configs/                 # MCP 服务配置
 |-- hooks/                       # 可选安全钩子
 |-- scripts/                     # 工具脚本
-|-- docs/                        # 深度定制教程
-|-- tests/                       # 配置验证测试
+|-- docs/                        # 维护文档（源仓库保留）
+|-- tests/                       # 配置验证测试（源仓库保留）
 `-- workflows/                   # workflow 定义与运行时状态
 ```
 
@@ -168,8 +167,10 @@ ai-config/
 
 ### 配置变更流程
 
+如果你在维护 UCC 配置仓库：
+
 1. 修改配置文件。
-2. 运行校验：
+2. 运行完整校验：
 
 ```bash
 node scripts/validate-config.js
@@ -177,6 +178,12 @@ node tests/run-all.js
 ```
 
 3. 通过校验后再提交变更。
+
+如果你只是把 UCC 部署到业务项目：
+
+```bash
+node .claude/scripts/validate-config.js
+```
 
 ### 排查“配置不生效”
 
@@ -198,12 +205,13 @@ node tests/run-all.js
 
 ## 深入定制
 
-更详细的定制方法，请参阅 [配置定制指南](docs/配置定制指南.md)。
+更详细的定制方法请回到 UCC 配置仓库查看 `docs/配置定制指南.md` 源文件。
 
 ---
 
 ## 版本日志
 
+- **v4.4.0** - 删除 `.internal` 与 `contexts`，默认部署包不再复制 `docs/` 和 `tests/`，同时让已部署项目中的 `validate-config.js` 支持精简布局校验
 - **v4.3.0** - 公开 slash 命令面继续收敛到 8 个固定入口，低频专项命令改为内部 agent 能力，由 team / single workflow 自动按需调度
 - **v4.2.0** - 公开流程入口收敛为 `/ucc-team-*` 与 `/ucc-single-*` 的可读命令族，保留 5 个自动化入口与 3 个控制命令，调研链路默认自动接力到标准实施，所有 agents 继续 `model: inherit`
 - **v4.1.0** - 所有 agents 默认继承当前会话模型，移除 legacy 与低频维护命令，公开命令面收敛到 29 个

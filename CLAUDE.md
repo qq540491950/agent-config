@@ -50,13 +50,12 @@
 |-- CLAUDE.md              # 主入口配置
 |-- agents/                # 代理配置（20个）
 |-- commands/              # 公开斜杠命令（8个）
-|-- contexts/              # 工作模式（3个）
 |-- rules/                 # 编码规范
 |-- skills/                # 技能模块（19个）
 |-- hooks/                 # 可选安全 Hook
 |-- scripts/               # 工具脚本
-|-- docs/                  # 文档
-|-- tests/                 # 配置测试
+|-- docs/                  # 维护文档（源仓库保留）
+|-- tests/                 # 配置测试（源仓库保留）
 `-- workflows/             # workflow 定义与运行时状态
 ```
 
@@ -220,14 +219,21 @@
 
 ## 维护要求
 
-修改命令面、workflow、代理或文档后，至少执行：
+如果你在维护 UCC 配置仓库，修改命令面、workflow、代理或文档后，至少执行：
 
 ```bash
 node scripts/validate-config.js
 node tests/run-all.js
 ```
 
+如果你只是验证已部署到业务项目中的 UCC 资产，执行：
+
+```bash
+node .claude/scripts/validate-config.js
+```
+
 ## 参考文档
 
-- 使用说明：`docs/使用说明.md`
-- 定制指南：`docs/配置定制指南.md`
+- 已部署项目说明：`.claude/README.md`
+- 源仓库使用说明：`docs/使用说明.md`
+- 源仓库定制指南：`docs/配置定制指南.md`

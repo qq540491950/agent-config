@@ -7,7 +7,6 @@ const root = path.resolve(__dirname, '..')
 const expectedCounts = {
   agents: 20,
   commands: 8,
-  contexts: 3,
   skills: 19,
 }
 
@@ -41,7 +40,6 @@ function assertFrontmatterKeys(file, keys) {
 
 assert.strictEqual(listFiles('agents').length, expectedCounts.agents, 'agents 数量不匹配')
 assert.strictEqual(listFiles('commands').length, expectedCounts.commands, 'commands 数量不匹配')
-assert.strictEqual(listFiles('contexts').length, expectedCounts.contexts, 'contexts 数量不匹配')
 assert.strictEqual(
   fs
     .readdirSync(path.join(root, 'skills'), { withFileTypes: true })

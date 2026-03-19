@@ -10,7 +10,7 @@ pausePolicy: strict
 triggerVisibility: always
 ---
 
-# UCC Flow Team Strict 命令
+# UCC Team Strict 命令
 
 这是用于生产核心链路、高风险改动和多人协作的严格入口。
 

@@ -42,154 +42,21 @@
     ]
   },
   "profiles": {
-    "single.dev": {
+    "single.standard": {
       "mode": "single",
-      "label": "Single Dev Workflow",
-      "publicCommand": "/ucc-flow-single-dev",
+      "label": "Single Standard Workflow",
+      "publicCommand": "/ucc-single-standard",
       "executionModeDefault": "auto",
       "pausePolicyDefault": "auto",
       "entryNode": "clarify",
-      "nodes": {
-        "clarify": {
-          "phase": "需求澄清",
-          "executorAgent": "planner",
-          "successCondition": "目标、范围和约束明确",
-          "failureCondition": "关键需求缺失或存在冲突",
-          "nextOnSuccess": {
-            "node": "plan"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "scope-summary"
-          ]
-        },
-        "plan": {
-          "phase": "实现计划",
-          "executorAgent": "planner",
-          "successCondition": "已形成最小可执行计划",
-          "failureCondition": "无法确认关键路径或依赖",
-          "nextOnSuccess": {
-            "node": "implement"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "implementation-plan"
-          ]
-        },
-        "implement": {
-          "phase": "实施",
-          "executorAgent": "tdd-guide",
-          "successCondition": "完成最小实现且记录验证范围",
-          "failureCondition": "实现被构建错误或依赖阻塞",
-          "nextOnSuccess": {
-            "node": "review"
-          },
-          "nextOnBlocked": {
-            "node": "review"
-          },
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "code-change-summary"
-          ]
-        },
-        "review": {
-          "phase": "审查",
-          "executorAgent": "code-reviewer",
-          "successCondition": "关键问题已关闭或已记录阻塞",
-          "failureCondition": "存在未解决的关键问题",
-          "nextOnSuccess": {
-            "node": "verify"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "review-report"
-          ]
-        },
-        "verify": {
-          "phase": "验证",
-          "executorAgent": "code-reviewer",
-          "successCondition": "验证结果可交付",
-          "failureCondition": "关键检查失败",
-          "nextOnSuccess": {
-            "node": "summary"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "verification-report"
-          ]
-        },
-        "summary": {
-          "phase": "交付总结",
-          "executorAgent": "workflow-orchestrator",
-          "successCondition": "总结变更、验证和剩余风险",
-          "failureCondition": "无",
-          "nextOnSuccess": null,
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "delivery-summary"
-          ]
-        }
-      }
-    },
-    "single.review": {
-      "mode": "single",
-      "label": "Single Review Workflow",
-      "publicCommand": "/ucc-flow-single-review",
-      "executionModeDefault": "auto",
-      "pausePolicyDefault": "balanced",
-      "entryNode": "collect-context",
-      "nodes": {
-        "collect-context": {
-          "phase": "收集上下文",
-          "executorAgent": "code-reviewer",
-          "successCondition": "已读取足够上下文",
-          "failureCondition": "上下文不足且无法补充",
-          "nextOnSuccess": {
-            "node": "review"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "context-summary"
-          ]
-        },
-        "review": {
-          "phase": "审查",
-          "executorAgent": "code-reviewer",
-          "successCondition": "已输出按严重程度排序的发现",
-          "failureCondition": "发现无法归因或证据不足",
-          "nextOnSuccess": {
-            "node": "summary"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "review-report"
-          ]
-        },
-        "summary": {
-          "phase": "总结",
-          "executorAgent": "workflow-orchestrator",
-          "successCondition": "已说明风险和后续建议",
-          "failureCondition": "无",
-          "nextOnSuccess": null,
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "review-summary"
-          ]
-        }
-      }
+      "legacyCommands": [
+        "/ucc-flow-single-dev"
+      ]
     },
     "single.research": {
       "mode": "single",
       "label": "Single Research Workflow",
-      "publicCommand": "/ucc-flow-single-research",
+      "publicCommand": "/ucc-single-research",
       "executionModeDefault": "auto",
       "pausePolicyDefault": "balanced",
       "entryNode": "define-problem",
@@ -241,21 +108,27 @@
           "executorAgent": "workflow-orchestrator",
           "successCondition": "已明确推荐的后续入口",
           "failureCondition": "无",
-          "nextOnSuccess": null,
+          "nextOnSuccess": {
+            "profile": "single.standard",
+            "node": "plan"
+          },
           "nextOnBlocked": null,
           "approvalRequired": false,
           "artifactsWritten": [
             "recommended-next-step"
           ]
         }
-      }
+      },
+      "legacyCommands": [
+        "/ucc-flow-single-research"
+      ]
     },
     "team.standard": {
       "mode": "team",
       "label": "UCC Team Workflow",
-      "publicCommand": "/ucc-flow-team-standard",
+      "publicCommand": "/ucc-team-standard",
       "legacyCommands": [
-        "/ucc-team"
+        "/ucc-flow-team-standard"
       ],
       "executionModeDefault": "auto",
       "pausePolicyDefault": "balanced",
@@ -361,93 +234,12 @@
         }
       }
     },
-    "team.fast": {
-      "mode": "team",
-      "label": "UCC Team Fast Workflow",
-      "publicCommand": "/ucc-flow-team-fast",
-      "legacyCommands": [
-        "/ucc-team-fast"
-      ],
-      "executionModeDefault": "auto",
-      "pausePolicyDefault": "auto",
-      "entryNode": "clarify",
-      "nodes": {
-        "clarify": {
-          "phase": "快速澄清",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "修改边界明确",
-          "failureCondition": "范围或风险不清",
-          "nextOnSuccess": {
-            "node": "mini-plan"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "scope-summary"
-          ]
-        },
-        "mini-plan": {
-          "phase": "最小计划",
-          "executorAgent": "planner",
-          "successCondition": "已形成最小实现路径",
-          "failureCondition": "无法缩小范围",
-          "nextOnSuccess": {
-            "node": "implement"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "mini-plan"
-          ]
-        },
-        "implement": {
-          "phase": "实施",
-          "executorAgent": "tdd-guide",
-          "successCondition": "已完成最小改动",
-          "failureCondition": "实现受阻",
-          "nextOnSuccess": {
-            "node": "mini-verify"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "code-change-summary"
-          ]
-        },
-        "mini-verify": {
-          "phase": "最小验证",
-          "executorAgent": "code-reviewer",
-          "successCondition": "最小验证完成",
-          "failureCondition": "关键问题未解决",
-          "nextOnSuccess": {
-            "node": "summary"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "mini-verification-report"
-          ]
-        },
-        "summary": {
-          "phase": "变更说明",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "已说明改动和验证",
-          "failureCondition": "无",
-          "nextOnSuccess": null,
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "delivery-summary"
-          ]
-        }
-      }
-    },
     "team.strict": {
       "mode": "team",
       "label": "UCC Team Strict Workflow",
-      "publicCommand": "/ucc-flow-team-strict",
+      "publicCommand": "/ucc-team-strict",
       "legacyCommands": [
-        "/ucc-team-strict"
+        "/ucc-flow-team-strict"
       ],
       "executionModeDefault": "auto",
       "pausePolicyDefault": "strict",
@@ -581,79 +373,12 @@
         }
       }
     },
-    "team.review": {
-      "mode": "team",
-      "label": "UCC Team Review Workflow",
-      "publicCommand": "/ucc-flow-team-review",
-      "legacyCommands": [
-        "/ucc-team-review"
-      ],
-      "executionModeDefault": "auto",
-      "pausePolicyDefault": "balanced",
-      "entryNode": "collect-context",
-      "nodes": {
-        "collect-context": {
-          "phase": "收集上下文",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "已收集足够上下文",
-          "failureCondition": "上下文不足",
-          "nextOnSuccess": {
-            "node": "review"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "context-summary"
-          ]
-        },
-        "review": {
-          "phase": "审查",
-          "executorAgent": "code-reviewer",
-          "successCondition": "已形成发现报告",
-          "failureCondition": "发现缺少证据支持",
-          "nextOnSuccess": {
-            "node": "risk-gap"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "review-report"
-          ]
-        },
-        "risk-gap": {
-          "phase": "风险与测试缺口",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "已说明残余风险和测试缺口",
-          "failureCondition": "无",
-          "nextOnSuccess": {
-            "node": "summary"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "risk-gap-summary"
-          ]
-        },
-        "summary": {
-          "phase": "总结",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "已给出后续建议",
-          "failureCondition": "无",
-          "nextOnSuccess": null,
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "review-summary"
-          ]
-        }
-      }
-    },
     "team.research": {
       "mode": "team",
       "label": "UCC Team Research Workflow",
-      "publicCommand": "/ucc-flow-team-research",
+      "publicCommand": "/ucc-team-research",
       "legacyCommands": [
-        "/ucc-team-research"
+        "/ucc-flow-team-research"
       ],
       "executionModeDefault": "auto",
       "pausePolicyDefault": "balanced",
@@ -714,73 +439,6 @@
           "approvalRequired": false,
           "artifactsWritten": [
             "handoff-plan"
-          ]
-        }
-      }
-    },
-    "team.doc": {
-      "mode": "team",
-      "label": "UCC Team Doc Workflow",
-      "publicCommand": "/ucc-flow-team-doc",
-      "legacyCommands": [
-        "/ucc-team-doc"
-      ],
-      "executionModeDefault": "auto",
-      "pausePolicyDefault": "balanced",
-      "entryNode": "doc-type",
-      "nodes": {
-        "doc-type": {
-          "phase": "确认文档类型",
-          "executorAgent": "team-orchestrator",
-          "successCondition": "文档类型和目标读者明确",
-          "failureCondition": "文档目标不清",
-          "nextOnSuccess": {
-            "node": "context"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "doc-brief"
-          ]
-        },
-        "context": {
-          "phase": "收集上下文",
-          "executorAgent": "doc-updater",
-          "successCondition": "已收集足够上下文",
-          "failureCondition": "上下文不足",
-          "nextOnSuccess": {
-            "node": "generate"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "doc-context"
-          ]
-        },
-        "generate": {
-          "phase": "生成文档",
-          "executorAgent": "doc-updater",
-          "successCondition": "关键内容已生成",
-          "failureCondition": "文档目标未满足",
-          "nextOnSuccess": {
-            "node": "consistency-check"
-          },
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "document-draft"
-          ]
-        },
-        "consistency-check": {
-          "phase": "一致性校对",
-          "executorAgent": "doc-updater",
-          "successCondition": "已说明文档与代码或计划的一致性",
-          "failureCondition": "文档与实现不一致",
-          "nextOnSuccess": null,
-          "nextOnBlocked": null,
-          "approvalRequired": false,
-          "artifactsWritten": [
-            "doc-review-summary"
           ]
         }
       }

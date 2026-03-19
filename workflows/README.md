@@ -7,7 +7,7 @@
 
 ## 目标
 
-让 `/ucc-flow-team-*` 与 `/ucc-flow-single-*` 都能共享同一套运行时能力：
+让 `/ucc-team-*` 与 `/ucc-single-*` 共享同一套运行时能力：
 
 - 显式命令启动
 - 自动推进节点
@@ -22,12 +22,13 @@
 - 默认执行模式：`auto`
 - 根据 profile 自动应用 `pausePolicy`
 - `team.research` 的 `handoff` 会自动切入 `team.standard.plan`
+- `single.research` 的 `next-action` 会自动切入 `single.standard.plan`
 
 ## 脚本入口
 
 ```bash
-node .claude/scripts/workflow/runner.js start --command /ucc-flow-team-standard
-node .claude/scripts/workflow/runner.js start --command /ucc-flow-single-dev
+node .claude/scripts/workflow/runner.js start --command /ucc-team-standard
+node .claude/scripts/workflow/runner.js start --command /ucc-single-standard
 node .claude/scripts/workflow/runner.js advance --run <runId> --result passed
 node .claude/scripts/workflow/runner.js continue --run <runId>
 node .claude/scripts/workflow/runner.js resume --run <runId>

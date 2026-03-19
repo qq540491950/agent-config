@@ -21,8 +21,8 @@ try {
   assert.strictEqual(result.status, 0, result.stderr || result.stdout)
   assert.ok(fs.existsSync(path.join(projectRoot, 'CLAUDE.md')), '项目根目录缺少 CLAUDE.md')
   assert.ok(
-    fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-flow-team-standard.md')),
-    '.claude/commands 缺少 ucc-flow-team-standard.md',
+    fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-team-standard.md')),
+    '.claude/commands 缺少 ucc-team-standard.md',
   )
   assert.ok(
     fs.existsSync(path.join(projectRoot, '.claude', 'agents', 'team-orchestrator.md')),
@@ -36,8 +36,8 @@ try {
   )
   assert.ok(!fs.existsSync(path.join(projectRoot, 'README.md')), '配置 README 不应覆盖项目根 README.md')
   assert.ok(
-    !fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-team.md')),
-    '.claude/commands 不应再暴露旧的 ucc-team.md',
+    !fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-flow-team-standard.md')),
+    '.claude/commands 不应再暴露旧的 ucc-flow-team-standard.md',
   )
 
   const deployedScript = path.join(projectRoot, '.claude', 'scripts', 'copy-config.js')

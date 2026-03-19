@@ -10,7 +10,7 @@ pausePolicy: balanced
 triggerVisibility: always
 ---
 
-# UCC Flow Team Standard 命令
+# UCC Team Standard 命令
 
 这是推荐的团队默认入口，适用于已有项目框架上的常规功能开发、重构和缺陷修复。
 

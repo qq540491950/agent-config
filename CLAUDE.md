@@ -7,11 +7,11 @@
 - 配置代号：`UCC`
 - 调用标记：`@ucc`
 
-### 命中约束
+## 命中约束
 
 - 当用户消息显式包含 `@ucc` 时，最终输出末尾必须追加：`配置标识：UCC`
 - 当用户通过 `commands/` 中的显式命令触发流程时，最终输出末尾也必须追加：`配置标识：UCC`
-- 当用户通过 `/ucc-flow-team-*` 或 `/ucc-flow-single-*` 进入 workflow 时，还必须输出 workflow 摘要，至少包含：
+- 当用户通过下列 workflow 命令进入或控制流程时，还必须输出 workflow 摘要，至少包含：
   - `当前阶段：...`
   - `触发链：...`
   - `当前节点：...`
@@ -20,6 +20,17 @@
   - `暂停策略：...`
   - `暂停状态：...`
   - `继续命令：/ucc-flow-continue`
+
+适用命令：
+
+- `/ucc-team-standard`
+- `/ucc-team-strict`
+- `/ucc-team-research`
+- `/ucc-single-standard`
+- `/ucc-single-research`
+- `/ucc-flow-status`
+- `/ucc-flow-continue`
+- `/ucc-flow-abort`
 
 若用户反馈“像默认配置”或“命令未生效”，优先让用户补充 `@ucc`，并检查最终输出末尾是否包含 `配置标识：UCC`。
 
@@ -36,17 +47,17 @@
 
 ```text
 ./
-├── CLAUDE.md              # 主入口配置
-├── agents/                # 代理配置（20个）
-├── commands/              # 公开斜杠命令（29个）
-├── contexts/              # 工作模式（3个）
-├── rules/                 # 编码规范
-├── skills/                # 技能模块（19个）
-├── hooks/                 # 可选安全 Hook
-├── scripts/               # 工具脚本
-├── docs/                  # 文档
-├── tests/                 # 配置测试
-├── workflows/             # workflow 定义与运行时状态
+|-- CLAUDE.md              # 主入口配置
+|-- agents/                # 代理配置（20个）
+|-- commands/              # 公开斜杠命令（25个）
+|-- contexts/              # 工作模式（3个）
+|-- rules/                 # 编码规范
+|-- skills/                # 技能模块（19个）
+|-- hooks/                 # 可选安全 Hook
+|-- scripts/               # 工具脚本
+|-- docs/                  # 文档
+|-- tests/                 # 配置测试
+`-- workflows/             # workflow 定义与运行时状态
 ```
 
 ## 核心工作方式
@@ -55,15 +66,11 @@
 
 推荐直接使用以下入口：
 
-- 团队标准交付：`/ucc-flow-team-standard`
-- 团队快速闭环：`/ucc-flow-team-fast`
-- 团队严格闭环：`/ucc-flow-team-strict`
-- 团队审查闭环：`/ucc-flow-team-review`
-- 团队调研闭环：`/ucc-flow-team-research`
-- 团队文档闭环：`/ucc-flow-team-doc`
-- 单人开发闭环：`/ucc-flow-single-dev`
-- 单人审查闭环：`/ucc-flow-single-review`
-- 单人调研闭环：`/ucc-flow-single-research`
+- 团队标准交付：`/ucc-team-standard`
+- 团队严格交付：`/ucc-team-strict`
+- 团队调研并自动交接：`/ucc-team-research`
+- 单人标准闭环：`/ucc-single-standard`
+- 单人调研并自动交接：`/ucc-single-research`
 
 流程控制命令：
 
@@ -71,10 +78,9 @@
 - `/ucc-flow-continue`
 - `/ucc-flow-abort`
 
-
 ### 2. 运行时默认自动接力
 
-所有 `/ucc-flow-team-*` 与 `/ucc-flow-single-*` 入口默认：
+所有 `/ucc-team-*` 与 `/ucc-single-*` 入口默认：
 
 - `executionMode = auto`
 - 根据 profile 自动选择 `pausePolicy`
@@ -87,27 +93,26 @@
   - 需要用户补充不可推断的关键输入
 
 暂停后，统一使用 `/ucc-flow-continue [runId]` 接力。
-- 所有自定义 agents 默认 `model: inherit`，继承当前会话模型，避免固定 `opus` / `sonnet` 别名在 provider 侧触发 502。
+
+所有自定义 agents 默认 `model: inherit`，继承当前会话模型，避免固定官方模型别名在 provider 侧触发 502。
 
 ## 典型使用方式
 
 ### 场景 A：已有项目框架，想走团队全流程自动治理
 
-直接输入：
-
 ```text
-/ucc-flow-team-standard 审查现有项目框架，指出必须修改项，实施修改，完成验证，收尾并同步文档
+/ucc-team-standard 审查现有项目框架，指出必须修改项，实施修改，完成验证，收尾并同步文档
 ```
 
 预期自动链路：
 
-1. `clarify`：澄清目标、约束、边界
-2. `plan`：输出最小可执行计划
-3. `implement`：实施改动
-4. `review`：做审查并记录问题
-5. `verify`：执行验证
-6. `docs`：同步必要文档
-7. `summary`：输出最终交付总结
+1. `clarify`
+2. `plan`
+3. `implement`
+4. `review`
+5. `verify`
+6. `docs`
+7. `summary`
 
 如果中途命中风险或失败：
 
@@ -117,10 +122,8 @@
 
 ### 场景 B：先团队调研，再自动接力进入实施
 
-直接输入：
-
 ```text
-/ucc-flow-team-research 评估当前项目框架的模块划分、构建组织和测试结构，如结论明确则继续落地
+/ucc-team-research 评估当前项目框架的模块划分、构建组织和测试结构，如结论明确则继续落地
 ```
 
 预期自动链路：
@@ -132,14 +135,10 @@
 5. 自动切入 `team.standard.plan`
 6. 继续执行实施、审查、验证、文档同步和收尾
 
-这就是 team 模式下的“研究后自动接力到交付”。
-
 ### 场景 C：单 agent 自动闭环
 
-直接输入：
-
 ```text
-/ucc-flow-single-dev 基于当前仓库结构完成一轮自动检查、必要修改、验证和总结
+/ucc-single-standard 基于当前仓库结构完成一轮自动检查、必要修改、验证和总结
 ```
 
 预期自动链路：
@@ -151,22 +150,34 @@
 5. `verify`
 6. `summary`
 
-适合单人维护、日常修复、小型重构。
+### 场景 D：单 agent 先研究再自动落地
+
+```text
+/ucc-single-research 评估当前框架的模块边界、构建组织和测试缺口，并在结论明确后继续落地
+```
+
+预期自动链路：
+
+1. `define-problem`
+2. `evidence`
+3. `conclusion`
+4. `next-action`
+5. 自动切入 `single.standard.plan`
+6. 继续执行实施、审查、验证和总结
 
 ## 代理协同原则
 
 ### 自动触发
 
-- `/ucc-flow-team-*` 优先调用 `team-orchestrator`
-- `/ucc-flow-single-*` 优先调用 `workflow-orchestrator`
+- `/ucc-team-*` 优先调用 `team-orchestrator`
+- `/ucc-single-*` 与 `/ucc-flow-*` 控制命令优先调用 `workflow-orchestrator`
 - 代码改动完成后自动进入 reviewer / verify 节点
 - 需要同步文档时自动进入 `doc-updater`
 - 构建或类型错误时自动进入对应修复链路
 
 ### 公开命令与内部 agent 的关系
 
-对外只暴露少量显式完整入口；
-对内由 runtime 决定当前阶段调用哪个 agent。
+对外只暴露少量显式完整入口；对内由 runtime 决定当前阶段调用哪个 agent。
 
 这意味着用户不需要手工按阶段输入多条命令来串流程。
 
@@ -179,17 +190,13 @@
 
 ## 公开命令分类
 
-### 显式流程入口
+### 自动化流程入口
 
-- `/ucc-flow-team-standard`
-- `/ucc-flow-team-fast`
-- `/ucc-flow-team-strict`
-- `/ucc-flow-team-review`
-- `/ucc-flow-team-research`
-- `/ucc-flow-team-doc`
-- `/ucc-flow-single-dev`
-- `/ucc-flow-single-review`
-- `/ucc-flow-single-research`
+- `/ucc-team-standard`
+- `/ucc-team-strict`
+- `/ucc-team-research`
+- `/ucc-single-standard`
+- `/ucc-single-research`
 
 ### 流程控制
 
@@ -217,19 +224,13 @@
 - `/ucc-context-review`
 - `/ucc-context-research`
 
-## 工作模式
-
-- `dev`：更偏实现与交付
-- `review`：更偏发现问题与风险归因
-- `research`：更偏证据与结论
-
 ## 安全与质量要求
 
 - 不允许硬编码密钥
 - 对外部输入做验证
 - 修改后必须跑验证
 - 文档与实现变更要同步
-- 高风险任务优先使用 `/ucc-flow-team-strict`
+- 高风险任务优先使用 `/ucc-team-strict`
 
 ## 维护要求
 

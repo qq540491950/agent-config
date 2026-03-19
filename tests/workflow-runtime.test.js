@@ -17,7 +17,7 @@ const options = {
 try {
   const started = runtime.startRun(
     {
-      command: '/ucc-flow-team-research',
+      command: '/ucc-team-research',
       task: '分析现有链路并给出自动接力方案',
     },
     options,
@@ -26,7 +26,7 @@ try {
   assert.strictEqual(started.action, 'started')
   assert.strictEqual(started.run.profile, 'team.research')
   assert.strictEqual(started.run.currentNode, 'define-problem')
-  assert.strictEqual(started.run.entryCommand, '/ucc-flow-team-research')
+  assert.strictEqual(started.run.entryCommand, '/ucc-team-research')
   assert.strictEqual(started.run.executionMode, 'auto')
   assert.strictEqual(started.run.pausePolicy, 'balanced')
 
@@ -83,7 +83,7 @@ try {
 
   const joined = runtime.startRun(
     {
-      command: '/ucc-flow-single-dev',
+      command: '/ucc-team-standard',
       task: '继续现有 run',
     },
     options,
@@ -107,7 +107,7 @@ try {
 
   const secondStarted = runtime.startRun(
     {
-      command: '/ucc-flow-team-review',
+      command: '/ucc-team-standard',
     },
     options,
   )
@@ -115,7 +115,7 @@ try {
 
   const conflict = runtime.startRun(
     {
-      command: '/ucc-flow-team-doc',
+      command: '/ucc-single-research',
     },
     options,
   )

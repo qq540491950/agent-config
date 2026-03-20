@@ -14,6 +14,8 @@ const tests = [
   'tests/workflow-command-metadata.test.js',
   'tests/workflow-runtime.test.js',
   'tests/copy-config.test.js',
+  'tests/copy-config-modes.test.js',
+  'tests/settings-merge.test.js',
 ]
 
 for (const test of tests) {

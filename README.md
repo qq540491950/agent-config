@@ -4,6 +4,8 @@
 
 配置标识：`UCC` · 调用标记：`@ucc` · 命令前缀：`/ucc-*`
 
+`README.md` 只保留快速开始、安装矩阵和最短排障；完整操作说明请看 `docs/使用说明.md`，维护者定制说明请看 `docs/配置定制指南.md`。
+
 ---
 
 ## 快速开始
@@ -11,28 +13,36 @@
 ### 1. 复制配置到项目
 
 ```bash
-# 方式一：脚本复制（推荐）
+# 默认选择式安装：运行后按提示选择 CLAUDE、hooks、MCP 和平台
 node ai-config/scripts/copy-config.js <你的项目目录>
 
-# 方式二：手动复制
-cp ai-config/CLAUDE.md your-project/
-cp -r ai-config/{README.md,rules,agents,commands,skills,hooks,scripts,mcp-configs,workflows} your-project/.claude/
-cp ai-config/hooks/project-settings.json your-project/.claude/settings.json
+# 高级覆盖：直接指定 .claude/CLAUDE.md
+node ai-config/scripts/copy-config.js <你的项目目录> --claude-mode dotclaude
+
+# 高级覆盖：直接生成根目录 bootstrap CLAUDE.md，并启用项目级 hooks
+node ai-config/scripts/copy-config.js <你的项目目录> --claude-mode import-root --hooks project
+
+# 非交互生成项目级 MCP（默认 basic 预设）
+node ai-config/scripts/copy-config.js <你的项目目录> --mcp project
+
+# 兼容旧布局
+node ai-config/scripts/copy-config.js <你的项目目录> --legacy-layout
 ```
 
-复制完成后的目标结构应为：
+复制完成后的默认目标结构应为：
 
 ```text
 your-project/
-|-- CLAUDE.md
 `-- .claude/
     |-- commands/
     |-- agents/
     |-- skills/
     |-- scripts/
     |-- workflows/
-    `-- settings.json
+    `-- README.md
 ```
+
+脚本默认会进入选择式向导；只有在向导中选择或显式传入 `--claude-mode`、`--hooks`、`--mcp` 时，才会额外生成 `CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/settings.json`、`.claude/settings.local.json` 或项目根 `.mcp.json`。平台会优先自动判断，只在 API Key、目录等必填参数上要求输入。
 
 ### 2. 按团队规范调整规则
 
@@ -65,13 +75,13 @@ your-project/
 
 ```text
 ai-config/
-|-- CLAUDE.md                    # 主配置文件（复制到项目根目录）
+|-- CLAUDE.md                    # 源仓库自身的配置入口（不再默认复制到目标项目）
 |-- README.md                    # 本指南（复制到项目的 .claude/README.md）
 |-- rules/                       # 编码规范
 |-- agents/                      # 代理配置（20个）
 |-- commands/                    # 公开斜杠命令（8个）
 |-- skills/                      # 技能模块（19个）
-|-- mcp-configs/                 # MCP 服务配置
+|-- mcp-configs/                 # MCP 服务模板与交互式元数据
 |-- hooks/                       # 可选安全钩子
 |-- scripts/                     # 工具脚本
 |-- docs/                        # 维护文档（源仓库保留）
@@ -181,7 +191,7 @@ node scripts/validate-config.js
 node tests/run-all.js
 ```
 
-其中 `validate-config.js` 当前不仅检查文件是否存在，还会校验 workflow 语义闭环、`hooks/hooks.json` 与 `hooks/project-settings.json` 中的 `PreToolUse` / `PostToolUse` / `Stop`、以及文档中是否残留退役的 `/ucc-*` 命令引用。
+其中 `validate-config.js` 当前不仅检查文件是否存在，还会校验 workflow 语义闭环、`hooks/hooks.json` 中的 `PreToolUse` / `PostToolUse` / `Stop`、以及文档中是否残留退役的 `/ucc-*` 命令引用。
 
 3. 通过校验后再提交变更。
 
@@ -195,9 +205,9 @@ node .claude/scripts/validate-config.js
 
 1. 优先使用 `/ucc-team-standard`、`/ucc-team-research`、`/ucc-single-standard` 等显式入口。
 2. 检查输出末尾是否出现 `配置标识：UCC`。
-3. 若没有出现，确认项目根目录存在 `CLAUDE.md`。
-4. 确认项目内存在 `.claude/settings.json`、`.claude/commands/`、`.claude/agents/`。
-5. 确认 `.claude/workflows/definitions.json` 已复制到项目中。
+3. 确认项目内存在 `.claude/commands/`、`.claude/agents/` 与 `.claude/workflows/definitions.json`。
+4. 如果使用了 `--claude-mode dotclaude`，确认 `.claude/CLAUDE.md` 已生成；如果使用了 `--claude-mode import-root`，确认根目录 `CLAUDE.md` 或导入片段已就位。
+5. 如果启用了 hooks，确认 `.claude/settings.json` 或 `.claude/settings.local.json` 已生成并合并成功；如果启用了项目级 MCP，再确认项目根 `.mcp.json` 与 `enabledMcpjsonServers` 已写入。
 6. 如果仍未命中，再在请求中补充 `@ucc`。
 
 ### 注意事项

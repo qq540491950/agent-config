@@ -2,6 +2,8 @@
 
 本目录提供最小可用 hooks：
 
+本文只解释 hooks 的启用方式和运行约束；Hook 设计原则请看 `rules/common/hooks.md`。
+
 - `PreToolUse`：阻断明显高风险的删除/格式化命令
 - `PreToolUse`：写入前检测常见敏感信息模式（提醒）
 - `PostToolUse`：写入后自动执行 TS / Go 基础检查
@@ -20,9 +22,14 @@
 
 ## 启用方式
 
-项目级部署时，推荐直接使用 `hooks/project-settings.json` 作为项目内 `.claude/settings.json`。`scripts/copy-config.js` 已默认执行这一步。
+`scripts/copy-config.js` 默认不会启用 hooks，也不会默认生成任何 settings 文件。推荐按以下方式显式选择：
 
-如果只想启用最小 Hook 集，也可以将 `hooks/hooks.json` 中的 `hooks` 字段手动合并到你的 `.claude/settings.json`，并确保上述 `scripts/hooks/*.js` 也一并复制到项目中：
+- 默认运行脚本后通过向导选择 hooks 与 MCP：`node scripts/copy-config.js <target>`
+- 项目共享 hooks：`node scripts/copy-config.js <target> --hooks project`
+- 个人本地 hooks：`node scripts/copy-config.js <target> --hooks local`
+- 兼容旧布局：`node scripts/copy-config.js <target> --legacy-layout`
+
+如果只想手动启用最小 Hook 集，也可以将 `hooks/hooks.json` 中的 `hooks` 字段合并到你的 `.claude/settings.json` 或 `.claude/settings.local.json`，并确保上述 `scripts/hooks/*.js` 也一并复制到项目中：
 
 ```json
 {
@@ -34,7 +41,7 @@
 }
 ```
 
-> 说明：本仓库默认不强制启用 hooks，按需手动开启，保持“精简可用”。
+> 说明：本仓库默认不强制启用 hooks，按需显式开启，保持“精简可用”。
 
 ## 运行时控制（可选）
 
@@ -65,5 +72,6 @@ export ECC_DISABLED_HOOKS=stop:delivery-reminder
 - 阻断通过 `exit code 2` 实现（仅 PreToolUse 生效）
 - 提醒为非阻断输出（stderr）
 - `PostToolUse` 用于写入后自动补做语言级检查，但不替代完整验证流程
+- 所有 hook 命令都应通过 `$CLAUDE_PROJECT_DIR/.claude/scripts/...` 引用项目内脚本，避免依赖当前工作目录
 - 使用 Node.js 脚本，兼容 Windows / macOS / Linux
 - 团队模式可结合 `/ucc-team-standard`、`/ucc-team-strict` 与 `/ucc-flow-continue` 形成更完整交付门禁

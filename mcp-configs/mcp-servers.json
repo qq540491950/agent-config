@@ -55,18 +55,68 @@
       "description": "Docker 容器管理"
     }
   },
+  "_interactive": {
+    "presets": {
+      "basic": ["memory", "filesystem", "context7"],
+      "research": ["memory", "filesystem", "context7", "sequential-thinking"],
+      "full": [
+        "github",
+        "memory",
+        "filesystem",
+        "context7",
+        "sequential-thinking",
+        "firecrawl",
+        "exa-web-search",
+        "vercel",
+        "docker"
+      ]
+    },
+    "requiredParams": {
+      "github": [
+        {
+          "kind": "env",
+          "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "label": "GitHub Personal Access Token",
+          "required": true
+        }
+      ],
+      "filesystem": [
+        {
+          "kind": "arg",
+          "index": 2,
+          "label": "filesystem 可访问目录",
+          "default": "$PROJECT_ROOT",
+          "required": true
+        }
+      ],
+      "firecrawl": [
+        {
+          "kind": "env",
+          "key": "FIRECRAWL_API_KEY",
+          "label": "Firecrawl API Key",
+          "required": true
+        }
+      ],
+      "exa-web-search": [
+        {
+          "kind": "env",
+          "key": "EXA_API_KEY",
+          "label": "Exa API Key",
+          "required": true
+        }
+      ]
+    }
+  },
   "_comments": {
-    "usage": "将需要的服务复制到你的 ~/.claude.json 的 mcpServers 部分",
-    "env_vars": "将 YOUR_*_HERE 占位符替换为实际的 API 密钥",
-    "disabling": "使用项目配置中的 disabledMcpServers 数组来按项目禁用",
-    "context_warning": "建议启用不超过 10 个 MCP 服务以保持上下文窗口",
-    "required": "必装服务: github, memory, filesystem, context7",
-    "recommended": "推荐服务: sequential-thinking, exa-web-search"
+    "usage": "copy-config.js 会基于此模板和交互输入生成项目根 .mcp.json",
+    "required_inputs": "只有 API Key、目录等必要参数需要输入，其余由向导选择或自动推断",
+    "platform": "本地 stdio MCP 会按目标平台自动生成命令包装",
+    "settings": "启用的项目级 MCP 会同步写入 .claude/settings.json 的 enabledMcpjsonServers"
   },
   "_installation": {
-    "step1": "复制此文件中需要的服务配置",
-    "step2": "粘贴到 ~/.claude.json 的 mcpServers 对象中",
-    "step3": "替换 YOUR_*_HERE 为实际密钥",
-    "step4": "重启 Claude Code CLI"
+    "step1": "运行 node scripts/copy-config.js <target> --interactive",
+    "step2": "按提示选择 hooks、MCP 和平台",
+    "step3": "仅输入必要的 Key 或目录",
+    "step4": "重启 Claude Code CLI 或重新进入项目"
   }
 }

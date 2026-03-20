@@ -23,7 +23,7 @@ const mustHave = [
   'rules/javascript/patterns.md',
   'skills/node-backend-patterns/SKILL.md',
   'skills/design-collaboration/SKILL.md',
-  'hooks/project-settings.json',
+  'hooks/hooks.json',
   'agents/database-reviewer.md',
   'agents/design-doc-writer.md',
   'agents/delivery-doc-writer.md',

@@ -2,6 +2,8 @@
 
 > 此文件定义 UCC 当前采用的 Claude Code Hook 模型，以及与仓库实现保持一致的使用约束。
 
+本文只定义 Hook 设计原则与边界，不重复部署命令或安装步骤；实际启用方式请看 `hooks/README.md`。
+
 ## 当前生效的 Hook 事件
 
 UCC 当前以 Claude Code 的工具生命周期 Hook 为准，实际使用以下 3 类事件：
@@ -56,7 +58,6 @@ UCC 当前以 Claude Code 的工具生命周期 Hook 为准，实际使用以下
 当前实现以以下文件为准：
 
 - `hooks/hooks.json`
-- `hooks/project-settings.json`
 - `scripts/hooks/pretool-risk-blocker.js`
 - `scripts/hooks/pretool-sensitive-write-check.js`
 - `scripts/hooks/posttool-ts-check.js`

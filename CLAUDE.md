@@ -43,6 +43,14 @@
 3. 默认自动推进，只有在风险、失败、冲突或 pausePolicy 命中时暂停
 4. 让“检查、提出修改、实施、验证、收尾、更新文档”可以一次触发后自动接力完成
 
+## 部署约定
+
+- `scripts/copy-config.js` 默认只复制 `.claude/` 下的运行时资产
+- 默认不再为目标项目生成根目录 `CLAUDE.md`
+- 默认不再为目标项目生成 `.claude/settings.json`
+- 需要显式接入 `CLAUDE` 或 hooks 时，使用 `--claude-mode` 与 `--hooks` 参数
+- 如需兼容旧布局，使用 `--legacy-layout`
+
 ## 仓库结构
 
 ```text

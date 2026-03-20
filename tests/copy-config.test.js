@@ -19,7 +19,6 @@ try {
   })
 
   assert.strictEqual(result.status, 0, result.stderr || result.stdout)
-  assert.ok(fs.existsSync(path.join(projectRoot, 'CLAUDE.md')), '项目根目录缺少 CLAUDE.md')
   assert.ok(
     fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-team-standard.md')),
     '.claude/commands 缺少 ucc-team-standard.md',
@@ -28,20 +27,18 @@ try {
     fs.existsSync(path.join(projectRoot, '.claude', 'agents', 'team-orchestrator.md')),
     '.claude/agents 缺少 team-orchestrator.md',
   )
-  assert.ok(fs.existsSync(path.join(projectRoot, '.claude', 'settings.json')), '.claude/settings.json 未生成')
   assert.ok(fs.existsSync(path.join(projectRoot, '.claude', 'README.md')), '.claude/README.md 未生成')
   assert.ok(
     fs.existsSync(path.join(projectRoot, '.claude', 'workflows', 'definitions.json')),
     '.claude/workflows/definitions.json 未生成',
   )
+  assert.ok(!fs.existsSync(path.join(projectRoot, 'CLAUDE.md')), '默认安装不应生成项目根目录 CLAUDE.md')
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'settings.json')), '默认安装不应生成 .claude/settings.json')
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'settings.local.json')), '默认安装不应生成 .claude/settings.local.json')
   assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'docs')), '.claude/docs 不应默认复制')
   assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'tests')), '.claude/tests 不应默认复制')
   assert.ok(!fs.existsSync(path.join(projectRoot, '.claude', 'contexts')), '.claude/contexts 不应默认复制')
   assert.ok(!fs.existsSync(path.join(projectRoot, 'README.md')), '配置 README 不应覆盖项目根 README.md')
-  assert.ok(
-    !fs.existsSync(path.join(projectRoot, '.claude', 'commands', 'ucc-flow-team-standard.md')),
-    '.claude/commands 不应再暴露旧的 ucc-flow-team-standard.md',
-  )
 
   const deployedValidateScript = path.join(projectRoot, '.claude', 'scripts', 'validate-config.js')
   const validateResult = spawnSync('node', [deployedValidateScript], {
@@ -57,10 +54,10 @@ try {
   })
 
   assert.strictEqual(redeployResult.status, 0, redeployResult.stderr || redeployResult.stdout)
-  assert.ok(fs.existsSync(path.join(secondProjectRoot, 'CLAUDE.md')), '已部署脚本复制时缺少项目根 CLAUDE.md')
+  assert.ok(!fs.existsSync(path.join(secondProjectRoot, 'CLAUDE.md')), '已部署脚本默认复制时不应生成项目根目录 CLAUDE.md')
   assert.ok(
-    fs.existsSync(path.join(secondProjectRoot, '.claude', 'settings.json')),
-    '已部署脚本复制时未生成 .claude/settings.json',
+    !fs.existsSync(path.join(secondProjectRoot, '.claude', 'settings.json')),
+    '已部署脚本默认复制时不应生成 .claude/settings.json',
   )
 } finally {
   fs.rmSync(tempBase, { recursive: true, force: true })

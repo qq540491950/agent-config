@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/run-with-flags.js pre:cmd:risk-blocker scripts/hooks/pretool-risk-blocker.js standard,strict"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/run-with-flags.js\" pre:cmd:risk-blocker \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/pretool-risk-blocker.js\" standard,strict"
           }
         ],
         "description": "阻断明显高风险的删除/格式化命令（跨 Bash/PowerShell/Cmd，收紧关键字误报）"
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/run-with-flags.js pre:write:sensitive-check scripts/hooks/pretool-sensitive-write-check.js standard,strict"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/run-with-flags.js\" pre:write:sensitive-check \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/pretool-sensitive-write-check.js\" standard,strict"
           }
         ],
         "description": "写入前检测常见敏感信息模式并提醒"
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/run-with-flags.js post:write:ts-check scripts/hooks/posttool-ts-check.js standard,strict"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/run-with-flags.js\" post:write:ts-check \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/posttool-ts-check.js\" standard,strict"
           }
         ],
         "description": "写入 TS/TSX/Vue 文件后自动运行 tsc --noEmit + ESLint 检查"
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/run-with-flags.js post:write:go-check scripts/hooks/posttool-go-check.js standard,strict"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/run-with-flags.js\" post:write:go-check \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/posttool-go-check.js\" standard,strict"
           }
         ],
         "description": "写入 .go 文件后自动运行 go vet + gofmt 检查（staticcheck 可选）"
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/hooks/run-with-flags.js stop:delivery-reminder scripts/hooks/stop-delivery-reminder.js standard,strict"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/run-with-flags.js\" stop:delivery-reminder \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/stop-delivery-reminder.js\" standard,strict"
           }
         ],
         "description": "每次响应后给出 workflow 摘要与最小交付检查提醒"

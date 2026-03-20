@@ -6,15 +6,18 @@ const fs = require('fs')
 const path = require('path')
 
 const root = path.resolve(__dirname, '..')
-const parentRoot = path.resolve(root, '..')
 
 function detectLayout() {
-  if (fs.existsSync(path.join(root, 'CLAUDE.md'))) {
-    return 'repo'
+  const hasSharedAssets = ['commands', 'agents', 'scripts', 'hooks', 'workflows'].every((entry) =>
+    fs.existsSync(path.join(root, entry)),
+  )
+
+  if (path.basename(root) === '.claude' && hasSharedAssets) {
+    return 'deployed'
   }
 
-  if (fs.existsSync(path.join(parentRoot, 'CLAUDE.md'))) {
-    return 'deployed'
+  if (hasSharedAssets && fs.existsSync(path.join(root, 'docs')) && fs.existsSync(path.join(root, 'tests'))) {
+    return 'repo'
   }
 
   throw new Error(`无法识别 validate-config.js 所在布局: ${root}`)
@@ -30,12 +33,13 @@ const requiredFilesByLayout = {
     'docs/配置定制指南.md',
     'hooks/README.md',
     'hooks/hooks.json',
-    'hooks/project-settings.json',
     'mcp-configs/mcp-servers.json',
     'scripts/validate-config.js',
     'scripts/copy-config.js',
     'scripts/lib/workflow-runtime.js',
     'scripts/lib/hook-flags.js',
+    'scripts/lib/settings-merge.js',
+    'scripts/assets/claude-ucc.md',
     'scripts/workflow/runner.js',
     'scripts/hooks/pretool-risk-blocker.js',
     'scripts/hooks/pretool-sensitive-write-check.js',
@@ -49,6 +53,8 @@ const requiredFilesByLayout = {
     'tests/workflow-command-metadata.test.js',
     'tests/workflow-runtime.test.js',
     'tests/copy-config.test.js',
+    'tests/copy-config-modes.test.js',
+    'tests/settings-merge.test.js',
     'tests/config-smoke.test.js',
     'tests/metadata-integrity.test.js',
     'tests/model-inheritance.test.js',
@@ -92,16 +98,16 @@ const requiredFilesByLayout = {
     'workflows/README.md',
   ],
   deployed: [
-    '../CLAUDE.md',
     'README.md',
     'hooks/README.md',
     'hooks/hooks.json',
-    'hooks/project-settings.json',
     'mcp-configs/mcp-servers.json',
     'scripts/validate-config.js',
     'scripts/copy-config.js',
     'scripts/lib/workflow-runtime.js',
     'scripts/lib/hook-flags.js',
+    'scripts/lib/settings-merge.js',
+    'scripts/assets/claude-ucc.md',
     'scripts/workflow/runner.js',
     'scripts/hooks/pretool-risk-blocker.js',
     'scripts/hooks/pretool-sensitive-write-check.js',
@@ -326,7 +332,7 @@ function validateCommandsFrontmatter() {
 }
 
 function validateHooksJson() {
-  const hookFiles = ['hooks/hooks.json', 'hooks/project-settings.json']
+  const hookFiles = ['hooks/hooks.json']
 
   hookFiles.forEach((file) => {
     const parsed = JSON.parse(readText(file))
@@ -357,6 +363,18 @@ function validateHooksJson() {
           assert(
             typeof hook.command === 'string' && hook.command.trim().length > 0,
             `${file} 的 hooks.${eventName}[${index}].hooks[${hookIndex}] 缺少 command`,
+          )
+          assert(
+            /\$CLAUDE_PROJECT_DIR\/.claude\/scripts\//.test(hook.command),
+            `${file} 的 hooks.${eventName}[${index}].hooks[${hookIndex}] 必须使用 $CLAUDE_PROJECT_DIR/.claude/scripts/ 路径`,
+          )
+          assert(
+            !/node\s+scripts\//.test(hook.command),
+            `${file} 的 hooks.${eventName}[${index}].hooks[${hookIndex}] 不应直接依赖 scripts/ 相对路径`,
+          )
+          assert(
+            !/node\s+\.claude\/scripts\//.test(hook.command),
+            `${file} 的 hooks.${eventName}[${index}].hooks[${hookIndex}] 不应直接依赖 .claude/scripts/ 相对路径`,
           )
         })
       })

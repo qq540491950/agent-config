@@ -40,6 +40,8 @@
 
 ## 并行执行策略
 
+当前实现采用“串行主干 + 节点内并行审查”的最小策略：root workflow 仍按阶段顺序推进，并行能力只在明确声明的内部节点中开启。
+
 ### 可并行的操作
 
 以下操作可同时进行，无需等待：
@@ -60,7 +62,7 @@
 以下操作有依赖关系，必须顺序执行：
 
 ```
-team-orchestrator → planner → tdd-guide → 实现 → code-reviewer → 修复 → 验证
+team-orchestrator → planner → tdd-guide → 实现 → team-orchestrator(review fan-out) → 修复 → 验证
 ```
 
 ## 代理输出规范
@@ -131,6 +133,7 @@ team-orchestrator → planner → tdd-guide → 实现 → code-reviewer → 修
 ```
 
 适用于：常规代码变更
+仅限 workflow 明确声明支持并行委派的节点，例如 `team.standard.review` 与 `team.strict.review`
 
 ## 代理调用检查清单
 

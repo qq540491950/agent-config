@@ -52,6 +52,8 @@ node .claude/scripts/workflow/runner.js start --command <slash-command> --task "
 - 只执行当前节点需要的工作
 - 不要把多个后续节点压缩成一次输出
 - 若需要专用代理能力，可协调 `planner`、`tdd-guide`、`code-reviewer`、`doc-updater` 等
+- 若当前节点声明 `executionStrategy: parallel-delegate`，由你负责读取 `parallelDelegates` 并在当前节点内执行并行委派
+- 并行委派完成前不得提前推进 workflow；必须按 `joinPolicy` 汇总必需代理结果后，再调用一次 `advance`
 
 ### 3. 推进节点
 
@@ -93,8 +95,10 @@ node .claude/scripts/workflow/runner.js advance --run <runId> --result passed --
 
 ### 4. 审查与验证
 
-- 代码改动完成后，协调 `code-reviewer` 或语言专用 reviewer
-- 高风险代码额外协调 `security-reviewer`
+- `team` 工作流主干保持串行推进；最小版并行只发生在声明了 `parallel-delegate` 的节点内
+- `review` 节点默认由你并行委派 `code-reviewer`
+- 命中风险信号时，在同一个 `review` 节点内按需并行委派 `security-reviewer`
+- 并行委派结束后输出一份汇总审查结论，再进入 `verify` 或 `full-verify`
 - 运行适当的验证命令；无法运行时必须说明
 
 ### 5. 文档同步
@@ -139,3 +143,5 @@ node .claude/scripts/workflow/runner.js advance --run <runId> --result passed --
 - 不要省略触发链输出
 - 若任务显然更适合现有专用命令，也应说明对应的 UCC 入口
 - `pausePolicy` 命中时必须暂停，而不是继续自动吞掉高风险变更
+- 遇到 `parallel-delegate` 节点时，只允许在当前节点内并行委派，不要创建多个并行 root workflow
+- `parallelDelegates` 未满足 `joinPolicy` 前，不得推进到下一个节点

@@ -97,8 +97,8 @@ ai-config/
 
 | 命令 | 用途 | 自动链路 |
 |------|------|----------|
-| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划 -> 实施 -> 审查 -> 验证 -> 文档 -> 总结 |
-| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划 -> 实施 -> 审查 -> 完整验证 -> 文档 -> 质量门禁 -> 总结 |
+| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划 -> 实施 -> 审查（节点内并行） -> 验证 -> 文档 -> 总结 |
+| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划 -> 实施 -> 审查（节点内并行） -> 完整验证 -> 文档 -> 质量门禁 -> 总结 |
 | `/ucc-team-research` | 团队调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 交接 -> 自动切入 `team.standard.plan` |
 | `/ucc-single-standard` | 单 agent 闭环交付 | 澄清 -> 计划 -> 实施 -> 审查 -> 验证 -> 总结 |
 | `/ucc-single-research` | 单 agent 调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 后续动作 -> 自动切入 `single.standard.plan` |
@@ -114,6 +114,8 @@ ai-config/
 ### 内部能力
 
 构建修复、语言专项审查、数据库审查、E2E、文档生成、覆盖率补齐、死代码清理和上下文切换能力仍然保留，但改为由 runtime 按阶段自动调度内部 agent，不再额外占用公开 slash 命令面。
+
+当前团队 workflow 仍是单 active run 的串行主干；最小版并行只覆盖 `review` 节点，由 `team-orchestrator` 在节点内并行委派 `code-reviewer`，并在风险信号命中时按需并行委派 `security-reviewer`。
 
 ---
 

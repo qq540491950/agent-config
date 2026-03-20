@@ -77,6 +77,35 @@ assert.ok(definitions.pausePolicies.auto.includes('build-failed'))
 assert.ok(definitions.pausePolicies.balanced.includes('db-migration'))
 assert.ok(definitions.pausePolicies.strict.includes('quality-gate'))
 
+const teamStandardReview = definitions.profiles['team.standard'].nodes.review
+assert.strictEqual(teamStandardReview.executorAgent, 'team-orchestrator', 'team.standard.review 应由 team-orchestrator 协调并行审查')
+assert.strictEqual(teamStandardReview.executionStrategy, 'parallel-delegate', 'team.standard.review 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStandardReview.joinPolicy, 'all-required-complete', 'team.standard.review 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStandardReview.parallelDelegates.map((delegate) => delegate.name),
+  ['code-review', 'security-review'],
+  'team.standard.review 并行委派列表不正确',
+)
+assert.strictEqual(teamStandardReview.parallelDelegates[0].agent, 'code-reviewer')
+assert.strictEqual(teamStandardReview.parallelDelegates[0].required, true)
+assert.strictEqual(teamStandardReview.parallelDelegates[1].agent, 'security-reviewer')
+assert.strictEqual(teamStandardReview.parallelDelegates[1].required, false)
+assert.deepStrictEqual(teamStandardReview.parallelDelegates[1].whenSignals, [
+  'auth-change',
+  'config-sensitive',
+  'api-contract',
+])
+
+const teamStrictReview = definitions.profiles['team.strict'].nodes.review
+assert.strictEqual(teamStrictReview.executorAgent, 'team-orchestrator', 'team.strict.review 应由 team-orchestrator 协调并行审查')
+assert.strictEqual(teamStrictReview.executionStrategy, 'parallel-delegate', 'team.strict.review 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStrictReview.joinPolicy, 'all-required-complete', 'team.strict.review 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStrictReview.parallelDelegates.map((delegate) => delegate.name),
+  ['code-review', 'security-review'],
+  'team.strict.review 并行委派列表不正确',
+)
+
 const hooksReadme = read('hooks/README.md')
 assert.ok(!hooksReadme.includes('/ucc-flow-team-standard'), 'hooks/README.md 不应再引用 /ucc-flow-team-standard')
 assert.ok(!hooksReadme.includes('/ucc-flow-team-doc'), 'hooks/README.md 不应再引用 /ucc-flow-team-doc')

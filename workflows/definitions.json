@@ -266,9 +266,28 @@
         },
         "review": {
           "phase": "审查",
-          "executorAgent": "code-reviewer",
-          "successCondition": "关键问题已解决或记录阻塞",
-          "failureCondition": "存在未解决关键问题",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "并行审查已完成且关键问题已解决或记录阻塞",
+          "failureCondition": "必需审查未完成或存在未解决关键问题",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "code-review",
+              "agent": "code-reviewer",
+              "required": true
+            },
+            {
+              "name": "security-review",
+              "agent": "security-reviewer",
+              "required": false,
+              "whenSignals": [
+                "auth-change",
+                "config-sensitive",
+                "api-contract"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "verify"
           },
@@ -391,9 +410,28 @@
         },
         "review": {
           "phase": "审查",
-          "executorAgent": "code-reviewer",
-          "successCondition": "审查完成且关键问题已清空",
-          "failureCondition": "存在未解决关键问题",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "并行审查完成且关键问题已清空",
+          "failureCondition": "必需审查未完成或存在未解决关键问题",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "code-review",
+              "agent": "code-reviewer",
+              "required": true
+            },
+            {
+              "name": "security-review",
+              "agent": "security-reviewer",
+              "required": false,
+              "whenSignals": [
+                "auth-change",
+                "config-sensitive",
+                "api-contract"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "full-verify"
           },

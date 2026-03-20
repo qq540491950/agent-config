@@ -20,6 +20,14 @@ assert.ok(
   fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('流程完成：UCC Team Workflow'),
   'team-orchestrator 缺少统一收尾标识',
 )
+assert.ok(
+  fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('并行委派'),
+  'team-orchestrator 缺少并行委派说明',
+)
+assert.ok(
+  fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('security-reviewer'),
+  'team-orchestrator 缺少安全审查并行协调说明',
+)
 
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8')
 const usage = fs.readFileSync(path.join(root, 'docs', '使用说明.md'), 'utf8')

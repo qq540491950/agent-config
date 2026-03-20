@@ -217,6 +217,8 @@
 
 构建修复、数据库审查、语言专项审查、E2E、文档生成与同步、覆盖率补齐、死代码清理和上下文切换能力继续保留，但不再作为公开 slash 命令暴露；运行时会根据当前节点和风险信号自动调度对应 agent。
 
+当前 team workflow 仍采用单 active run 的串行主干；最小版并行只开放 `review` 节点内的并行委派，由 `team-orchestrator` 汇总 `code-reviewer` 与按需触发的 `security-reviewer` 结果后再继续推进。
+
 ## 安全与质量要求
 
 - 不允许硬编码密钥

@@ -97,8 +97,8 @@ ai-config/
 
 | 命令 | 用途 | 自动链路 |
 |------|------|----------|
-| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划 -> 实施 -> 审查（节点内并行） -> 验证 -> 文档 -> 总结 |
-| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划 -> 实施 -> 审查（节点内并行） -> 完整验证 -> 文档 -> 质量门禁 -> 总结 |
+| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划 -> 实施 -> 审查（节点内并行） -> 验证（节点内有限并行） -> 文档 -> 总结 |
+| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划 -> 实施 -> 审查（节点内并行） -> 完整验证（节点内有限并行） -> 文档 -> 质量门禁 -> 总结 |
 | `/ucc-team-research` | 团队调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 交接 -> 自动切入 `team.standard.plan` |
 | `/ucc-single-standard` | 单 agent 闭环交付 | 澄清 -> 计划 -> 实施 -> 审查 -> 验证 -> 总结 |
 | `/ucc-single-research` | 单 agent 调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 后续动作 -> 自动切入 `single.standard.plan` |
@@ -115,7 +115,7 @@ ai-config/
 
 构建修复、语言专项审查、数据库审查、E2E、文档生成、覆盖率补齐、死代码清理和上下文切换能力仍然保留，但改为由 runtime 按阶段自动调度内部 agent，不再额外占用公开 slash 命令面。
 
-当前团队 workflow 仍是单 active run 的串行主干；最小版并行只覆盖 `review` 节点，由 `team-orchestrator` 在节点内并行委派 `code-reviewer`，并在风险信号命中时按需并行委派 `security-reviewer`。
+当前团队 workflow 仍是单 active run 的串行主干；最小版并行在 `review` 节点开放并行审查，并在 `team.standard.verify` 与 `team.strict.full-verify` 节点开放有限并行验证，由 `team-orchestrator` 汇总 `code-reviewer`、按需触发的 `security-reviewer` 与命中 `db-migration` 时的 `database-reviewer` 结果后再继续推进。
 
 ---
 
@@ -229,6 +229,7 @@ node .claude/scripts/validate-config.js
 
 ## 版本日志
 
+- **v4.6.0** - 在保持单 active run 串行主干不变的前提下，为 `team.standard.verify` 与 `team.strict.full-verify` 增加有限并行验证，并补齐相关测试与文档说明
 - **v4.5.0** - 补齐 `single.standard` 闭环定义，完善 `single.research -> single.standard.plan` 接力说明，同时增强 `validate-config.js` 对 workflow 语义、双 hook 配置与退役命令引用的校验
 - **v4.4.0** - 删除 `.internal` 与 `contexts`，默认部署包不再复制 `docs/` 和 `tests/`，同时让已部署项目中的 `validate-config.js` 支持精简布局校验
 - **v4.3.0** - 公开 slash 命令面继续收敛到 8 个固定入口，低频专项命令改为内部 agent 能力，由 team / single workflow 自动按需调度

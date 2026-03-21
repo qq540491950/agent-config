@@ -96,6 +96,21 @@ assert.deepStrictEqual(teamStandardReview.parallelDelegates[1].whenSignals, [
   'api-contract',
 ])
 
+const teamStandardVerify = definitions.profiles['team.standard'].nodes.verify
+assert.strictEqual(teamStandardVerify.executorAgent, 'team-orchestrator', 'team.standard.verify 应由 team-orchestrator 协调并行验证')
+assert.strictEqual(teamStandardVerify.executionStrategy, 'parallel-delegate', 'team.standard.verify 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStandardVerify.joinPolicy, 'all-required-complete', 'team.standard.verify 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStandardVerify.parallelDelegates.map((delegate) => delegate.name),
+  ['code-verify', 'database-verify'],
+  'team.standard.verify 并行委派列表不正确',
+)
+assert.strictEqual(teamStandardVerify.parallelDelegates[0].agent, 'code-reviewer')
+assert.strictEqual(teamStandardVerify.parallelDelegates[0].required, true)
+assert.strictEqual(teamStandardVerify.parallelDelegates[1].agent, 'database-reviewer')
+assert.strictEqual(teamStandardVerify.parallelDelegates[1].required, false)
+assert.deepStrictEqual(teamStandardVerify.parallelDelegates[1].whenSignals, ['db-migration'])
+
 const teamStrictReview = definitions.profiles['team.strict'].nodes.review
 assert.strictEqual(teamStrictReview.executorAgent, 'team-orchestrator', 'team.strict.review 应由 team-orchestrator 协调并行审查')
 assert.strictEqual(teamStrictReview.executionStrategy, 'parallel-delegate', 'team.strict.review 缺少 parallel-delegate 策略')
@@ -105,6 +120,21 @@ assert.deepStrictEqual(
   ['code-review', 'security-review'],
   'team.strict.review 并行委派列表不正确',
 )
+
+const teamStrictFullVerify = definitions.profiles['team.strict'].nodes['full-verify']
+assert.strictEqual(teamStrictFullVerify.executorAgent, 'team-orchestrator', 'team.strict.full-verify 应由 team-orchestrator 协调并行验证')
+assert.strictEqual(teamStrictFullVerify.executionStrategy, 'parallel-delegate', 'team.strict.full-verify 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStrictFullVerify.joinPolicy, 'all-required-complete', 'team.strict.full-verify 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStrictFullVerify.parallelDelegates.map((delegate) => delegate.name),
+  ['code-verify', 'database-verify'],
+  'team.strict.full-verify 并行委派列表不正确',
+)
+assert.strictEqual(teamStrictFullVerify.parallelDelegates[0].agent, 'code-reviewer')
+assert.strictEqual(teamStrictFullVerify.parallelDelegates[0].required, true)
+assert.strictEqual(teamStrictFullVerify.parallelDelegates[1].agent, 'database-reviewer')
+assert.strictEqual(teamStrictFullVerify.parallelDelegates[1].required, false)
+assert.deepStrictEqual(teamStrictFullVerify.parallelDelegates[1].whenSignals, ['db-migration'])
 
 const hooksReadme = read('hooks/README.md')
 assert.ok(!hooksReadme.includes('/ucc-flow-team-standard'), 'hooks/README.md 不应再引用 /ucc-flow-team-standard')

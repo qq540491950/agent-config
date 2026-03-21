@@ -299,9 +299,26 @@
         },
         "verify": {
           "phase": "验证",
-          "executorAgent": "code-reviewer",
-          "successCondition": "完成至少一轮验证",
-          "failureCondition": "关键检查失败",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "必需验证已完成，关键问题已解决或阻塞已记录",
+          "failureCondition": "必需验证未完成或关键检查失败",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "code-verify",
+              "agent": "code-reviewer",
+              "required": true
+            },
+            {
+              "name": "database-verify",
+              "agent": "database-reviewer",
+              "required": false,
+              "whenSignals": [
+                "db-migration"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "docs"
           },
@@ -443,9 +460,26 @@
         },
         "full-verify": {
           "phase": "完整验证",
-          "executorAgent": "code-reviewer",
-          "successCondition": "完整验证通过或阻塞已记录",
-          "failureCondition": "关键检查失败",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "必需验证已完成，关键问题已解决或阻塞已记录",
+          "failureCondition": "必需验证未完成或关键检查失败",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "code-verify",
+              "agent": "code-reviewer",
+              "required": true
+            },
+            {
+              "name": "database-verify",
+              "agent": "database-reviewer",
+              "required": false,
+              "whenSignals": [
+                "db-migration"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "docs"
           },

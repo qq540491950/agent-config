@@ -23,6 +23,7 @@
   - `最近阶段摘要：...`
   - `并行委派：...`
   - `验证状态：...`
+  - 若当前节点尚未开始验证，`验证状态` 必须明确体现 `当前节点尚未开始验证`
 
 适用命令：
 
@@ -103,6 +104,7 @@
   - 执行失败
   - 上下文冲突
   - 需要用户补充不可推断的关键输入
+- `team.standard` 中的 `config-sensitive` 只用于 workflow runtime 核心配置风险，不用于普通 `.claude` 文案、说明文档或一般命令描述变更
 
 暂停后，统一使用 `/ucc-flow-continue [runId]` 接力。
 
@@ -220,7 +222,7 @@
 
 构建修复、数据库审查、语言专项审查、E2E、文档生成与同步、覆盖率补齐、死代码清理和上下文切换能力继续保留，但不再作为公开 slash 命令暴露；运行时会根据当前节点和风险信号自动调度对应 agent。
 
-当前 team workflow 仍采用单 active run 的串行主干；受控并行在 `team.standard.plan`、`team.strict.detailed-plan`、`review` 与验证节点内开启，由 `team-orchestrator` 汇总 `planner`、按需触发的 `architect`、`code-reviewer`、`security-reviewer` 与 `database-reviewer` 结果后再继续推进。运行时还会写入 `.claude/workflows/control/*.json`，让 `/ucc-flow-status` 可以展示最近阶段摘要、并行委派与验证状态。
+当前 team workflow 仍采用单 active run 的串行主干；受控并行在 `team.standard.plan`、`team.strict.detailed-plan`、`review` 与验证节点内开启，由 `team-orchestrator` 汇总 `planner`、按需触发的 `architect`、`code-reviewer`、`security-reviewer` 与 `database-reviewer` 结果后再继续推进。运行时还会写入 `.claude/workflows/control/*.json`，让 `/ucc-flow-status` 只展示当前节点对应的最近阶段摘要、并行委派与验证状态。
 
 ## 安全与质量要求
 

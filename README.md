@@ -107,7 +107,7 @@ ai-config/
 
 | 命令 | 用途 |
 |------|------|
-| `/ucc-flow-status` | 查看当前或指定 workflow run 的状态 |
+| `/ucc-flow-status` | 查看当前或指定 workflow run 的状态，并优先显示当前节点对应的控制面摘要 |
 | `/ucc-flow-continue` | 继续当前或指定的 paused run |
 | `/ucc-flow-abort` | 中止当前或指定的 workflow run |
 
@@ -141,6 +141,8 @@ ai-config/
 | `team.research` | `auto` | `balanced` |
 | `single.standard` | `auto` | `auto` |
 | `single.research` | `auto` | `balanced` |
+
+`team.standard` 中的 `config-sensitive` 仅用于 workflow runtime 核心配置风险，不用于普通 `.claude` 文案、说明文档或一般命令描述变更。
 
 ---
 
@@ -231,6 +233,7 @@ node .claude/scripts/validate-config.js
 
 ## 版本日志
 
+- **v4.8.0** - 将 `/ucc-flow-status` 收敛为只展示当前节点对应的 control plane 数据，并在当前节点未开始验证时给出明确空状态；同时将 `team.standard` 中 `config-sensitive` 的语义收紧到 workflow runtime 核心配置风险
 - **v4.7.0** - 为 workflow runtime 增加 `control/` 控制面快照、扩展 `/ucc-flow-status` 的阶段/委派/验证可观测性，并将 `team.standard.plan` 与 `team.strict.detailed-plan` 升级为受控并行计划节点
 - **v4.6.0** - 在保持单 active run 串行主干不变的前提下，为 `team.standard.verify` 与 `team.strict.full-verify` 增加有限并行验证，并补齐相关测试与文档说明
 - **v4.5.0** - 补齐 `single.standard` 闭环定义，完善 `single.research -> single.standard.plan` 接力说明，同时增强 `validate-config.js` 对 workflow 语义、双 hook 配置与退役命令引用的校验

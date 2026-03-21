@@ -12,7 +12,7 @@ triggerVisibility: always
 
 # UCC Flow Status 命令
 
-查看当前 active run 或指定 runId 的 workflow 状态。若存在 control plane 快照，则优先展示最近阶段摘要、并行委派状态、验证状态与阻塞原因。
+查看当前 active run 或指定 runId 的 workflow 状态。若存在 control plane 快照，则优先展示当前节点对应的最近阶段摘要、并行委派状态、验证状态与阻塞原因；若当前节点尚未开始验证，则明确显示该空状态。
 
 ## 用法
 
@@ -39,4 +39,5 @@ triggerVisibility: always
 - `最近阶段摘要`
 - `并行委派`
 - `验证状态`
+- 若当前节点还没有 verification 记录，明确输出 `当前节点尚未开始验证`
 - `配置标识：UCC`

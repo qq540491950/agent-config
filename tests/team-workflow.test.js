@@ -16,18 +16,14 @@ teamCommands.forEach((file) => {
   assert.ok(content.includes('配置标识：UCC'), `${file} 缺少 UCC 命中标识约束`)
 })
 
-assert.ok(
-  fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('流程完成：UCC Team Workflow'),
-  'team-orchestrator 缺少统一收尾标识',
-)
-assert.ok(
-  fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('并行委派'),
-  'team-orchestrator 缺少并行委派说明',
-)
-assert.ok(
-  fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8').includes('security-reviewer'),
-  'team-orchestrator 缺少安全审查并行协调说明',
-)
+const teamOrchestrator = fs.readFileSync(path.join(root, 'agents', 'team-orchestrator.md'), 'utf8')
+
+assert.ok(teamOrchestrator.includes('流程完成：UCC Team Workflow'), 'team-orchestrator 缺少统一收尾标识')
+assert.ok(teamOrchestrator.includes('并行委派'), 'team-orchestrator 缺少并行委派说明')
+assert.ok(teamOrchestrator.includes('security-reviewer'), 'team-orchestrator 缺少安全审查并行协调说明')
+assert.ok(teamOrchestrator.includes('database-reviewer'), 'team-orchestrator 缺少数据库验证并行协调说明')
+assert.ok(teamOrchestrator.includes('full-verify'), 'team-orchestrator 缺少 full-verify 并行验证说明')
+assert.ok(teamOrchestrator.includes('有限并行验证'), 'team-orchestrator 缺少有限并行验证说明')
 
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8')
 const usage = fs.readFileSync(path.join(root, 'docs', '使用说明.md'), 'utf8')

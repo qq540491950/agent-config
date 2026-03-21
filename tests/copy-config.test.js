@@ -7,9 +7,11 @@ const root = path.resolve(__dirname, '..')
 const tempBase = fs.mkdtempSync(path.join(path.dirname(root), '.tmp-copy-config-'))
 const projectRoot = path.join(tempBase, 'demo-project')
 const secondProjectRoot = path.join(tempBase, 'demo-project-2')
+const esmProjectRoot = path.join(tempBase, 'demo-project-esm')
 
 fs.mkdirSync(projectRoot, { recursive: true })
 fs.mkdirSync(secondProjectRoot, { recursive: true })
+fs.mkdirSync(esmProjectRoot, { recursive: true })
 
 try {
   const script = path.join(root, 'scripts', 'copy-config.js')
@@ -59,6 +61,35 @@ try {
     !fs.existsSync(path.join(secondProjectRoot, '.claude', 'settings.json')),
     '已部署脚本默认复制时不应生成 .claude/settings.json',
   )
+
+  fs.writeFileSync(path.join(esmProjectRoot, 'package.json'), '{\n  "type": "module"\n}\n')
+  const esmDeployResult = spawnSync('node', [script, esmProjectRoot, '--force'], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  assert.strictEqual(esmDeployResult.status, 0, esmDeployResult.stderr || esmDeployResult.stdout)
+
+  const esmValidateResult = spawnSync('node', [path.join(esmProjectRoot, '.claude', 'scripts', 'validate-config.js')], {
+    cwd: esmProjectRoot,
+    encoding: 'utf8',
+  })
+  assert.strictEqual(
+    esmValidateResult.status,
+    0,
+    esmValidateResult.stderr || esmValidateResult.stdout,
+  )
+
+  const esmHookResult = spawnSync('node', [path.join(esmProjectRoot, '.claude', 'scripts', 'hooks', 'run-with-flags.js')], {
+    cwd: esmProjectRoot,
+    encoding: 'utf8',
+    input: '{}\n',
+  })
+  assert.strictEqual(
+    esmHookResult.status,
+    0,
+    esmHookResult.stderr || esmHookResult.stdout,
+  )
+  assert.strictEqual(esmHookResult.stdout.trim(), '{}', 'ESM 项目中的 hook runner 应能回显输入 JSON')
 } finally {
   fs.rmSync(tempBase, { recursive: true, force: true })
 }

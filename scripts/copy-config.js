@@ -428,6 +428,12 @@ function buildRootBootstrap() {
   return '# UCC\n\n@.claude/CLAUDE.ucc.md\n'
 }
 
+function buildClaudeRuntimePackageJson() {
+  return {
+    type: 'commonjs',
+  }
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
 }
@@ -882,11 +888,18 @@ async function resolveInstallOptions(args, projectRoot, prompter) {
 
 function buildCopyPlan(projectRoot, options) {
   const claudeDir = path.join(projectRoot, '.claude')
-  const plan = claudeDirItems.map((item) => ({
-    kind: 'copy',
-    src: item,
-    dst: path.join(claudeDir, item),
-  }))
+  const plan = [
+    {
+      kind: 'writeJson',
+      dst: path.join(claudeDir, 'package.json'),
+      value: buildClaudeRuntimePackageJson(),
+    },
+    ...claudeDirItems.map((item) => ({
+      kind: 'copy',
+      src: item,
+      dst: path.join(claudeDir, item),
+    })),
+  ]
 
   if (options.claudeMode !== 'off') {
     plan.push({

@@ -78,6 +78,25 @@ assert.ok(definitions.pausePolicies.balanced.includes('db-migration'))
 assert.ok(definitions.pausePolicies.strict.includes('quality-gate'))
 
 const teamStandardReview = definitions.profiles['team.standard'].nodes.review
+const teamStandardPlan = definitions.profiles['team.standard'].nodes.plan
+assert.strictEqual(teamStandardPlan.executorAgent, 'team-orchestrator', 'team.standard.plan 应由 team-orchestrator 协调并行计划')
+assert.strictEqual(teamStandardPlan.executionStrategy, 'parallel-delegate', 'team.standard.plan 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStandardPlan.joinPolicy, 'all-required-complete', 'team.standard.plan 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStandardPlan.parallelDelegates.map((delegate) => delegate.name),
+  ['implementation-plan', 'architecture-check'],
+  'team.standard.plan 并行委派列表不正确',
+)
+assert.strictEqual(teamStandardPlan.parallelDelegates[0].agent, 'planner')
+assert.strictEqual(teamStandardPlan.parallelDelegates[0].required, true)
+assert.strictEqual(teamStandardPlan.parallelDelegates[1].agent, 'architect')
+assert.strictEqual(teamStandardPlan.parallelDelegates[1].required, false)
+assert.deepStrictEqual(teamStandardPlan.parallelDelegates[1].whenSignals, [
+  'api-contract',
+  'auth-change',
+  'mass-rename',
+])
+
 assert.strictEqual(teamStandardReview.executorAgent, 'team-orchestrator', 'team.standard.review 应由 team-orchestrator 协调并行审查')
 assert.strictEqual(teamStandardReview.executionStrategy, 'parallel-delegate', 'team.standard.review 缺少 parallel-delegate 策略')
 assert.strictEqual(teamStandardReview.joinPolicy, 'all-required-complete', 'team.standard.review 缺少并行汇总策略')
@@ -112,6 +131,26 @@ assert.strictEqual(teamStandardVerify.parallelDelegates[1].required, false)
 assert.deepStrictEqual(teamStandardVerify.parallelDelegates[1].whenSignals, ['db-migration'])
 
 const teamStrictReview = definitions.profiles['team.strict'].nodes.review
+const teamStrictDetailedPlan = definitions.profiles['team.strict'].nodes['detailed-plan']
+assert.strictEqual(teamStrictDetailedPlan.executorAgent, 'team-orchestrator', 'team.strict.detailed-plan 应由 team-orchestrator 协调并行计划')
+assert.strictEqual(teamStrictDetailedPlan.executionStrategy, 'parallel-delegate', 'team.strict.detailed-plan 缺少 parallel-delegate 策略')
+assert.strictEqual(teamStrictDetailedPlan.joinPolicy, 'all-required-complete', 'team.strict.detailed-plan 缺少并行汇总策略')
+assert.deepStrictEqual(
+  teamStrictDetailedPlan.parallelDelegates.map((delegate) => delegate.name),
+  ['detailed-plan', 'architecture-check'],
+  'team.strict.detailed-plan 并行委派列表不正确',
+)
+assert.strictEqual(teamStrictDetailedPlan.parallelDelegates[0].agent, 'planner')
+assert.strictEqual(teamStrictDetailedPlan.parallelDelegates[0].required, true)
+assert.strictEqual(teamStrictDetailedPlan.parallelDelegates[1].agent, 'architect')
+assert.strictEqual(teamStrictDetailedPlan.parallelDelegates[1].required, false)
+assert.deepStrictEqual(teamStrictDetailedPlan.parallelDelegates[1].whenSignals, [
+  'api-contract',
+  'auth-change',
+  'mass-rename',
+  'major-dependency',
+])
+
 assert.strictEqual(teamStrictReview.executorAgent, 'team-orchestrator', 'team.strict.review 应由 team-orchestrator 协调并行审查')
 assert.strictEqual(teamStrictReview.executionStrategy, 'parallel-delegate', 'team.strict.review 缺少 parallel-delegate 策略')
 assert.strictEqual(teamStrictReview.joinPolicy, 'all-required-complete', 'team.strict.review 缺少并行汇总策略')

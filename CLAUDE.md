@@ -20,6 +20,9 @@
   - `暂停策略：...`
   - `暂停状态：...`
   - `继续命令：/ucc-flow-continue`
+  - `最近阶段摘要：...`
+  - `并行委派：...`
+  - `验证状态：...`
 
 适用命令：
 
@@ -217,7 +220,7 @@
 
 构建修复、数据库审查、语言专项审查、E2E、文档生成与同步、覆盖率补齐、死代码清理和上下文切换能力继续保留，但不再作为公开 slash 命令暴露；运行时会根据当前节点和风险信号自动调度对应 agent。
 
-当前 team workflow 仍采用单 active run 的串行主干；最小版并行在 `review` 节点开放并行审查，并在 `team.standard.verify` 与 `team.strict.full-verify` 节点开放有限并行验证，由 `team-orchestrator` 汇总 `code-reviewer`、按需触发的 `security-reviewer` 与命中 `db-migration` 时的 `database-reviewer` 结果后再继续推进。
+当前 team workflow 仍采用单 active run 的串行主干；受控并行在 `team.standard.plan`、`team.strict.detailed-plan`、`review` 与验证节点内开启，由 `team-orchestrator` 汇总 `planner`、按需触发的 `architect`、`code-reviewer`、`security-reviewer` 与 `database-reviewer` 结果后再继续推进。运行时还会写入 `.claude/workflows/control/*.json`，让 `/ucc-flow-status` 可以展示最近阶段摘要、并行委派与验证状态。
 
 ## 安全与质量要求
 

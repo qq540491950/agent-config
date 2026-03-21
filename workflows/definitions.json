@@ -66,9 +66,28 @@
         },
         "plan": {
           "phase": "实现计划",
-          "executorAgent": "planner",
-          "successCondition": "已输出最小可执行计划",
-          "failureCondition": "关键依赖或风险未明确",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "必需计划已完成，关键风险与验证建议已汇总",
+          "failureCondition": "必需计划未完成或关键依赖与风险仍未明确",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "implementation-plan",
+              "agent": "planner",
+              "required": true
+            },
+            {
+              "name": "architecture-check",
+              "agent": "architect",
+              "required": false,
+              "whenSignals": [
+                "api-contract",
+                "auth-change",
+                "mass-rename"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "implement"
           },
@@ -236,9 +255,28 @@
         },
         "plan": {
           "phase": "实现计划",
-          "executorAgent": "planner",
-          "successCondition": "已输出最小可执行计划",
-          "failureCondition": "关键依赖或风险未明确",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "必需计划已完成，关键风险与验证建议已汇总",
+          "failureCondition": "必需计划未完成或关键依赖与风险仍未明确",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "implementation-plan",
+              "agent": "planner",
+              "required": true
+            },
+            {
+              "name": "architecture-check",
+              "agent": "architect",
+              "required": false,
+              "whenSignals": [
+                "api-contract",
+                "auth-change",
+                "mass-rename"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "implement"
           },
@@ -397,9 +435,29 @@
         },
         "detailed-plan": {
           "phase": "详细计划",
-          "executorAgent": "planner",
-          "successCondition": "已形成详细计划和关键路径",
-          "failureCondition": "无法形成可执行计划",
+          "executorAgent": "team-orchestrator",
+          "successCondition": "必需计划已完成，关键路径、架构风险与验证建议已汇总",
+          "failureCondition": "必需计划未完成或无法形成可执行详细计划",
+          "executionStrategy": "parallel-delegate",
+          "parallelDelegates": [
+            {
+              "name": "detailed-plan",
+              "agent": "planner",
+              "required": true
+            },
+            {
+              "name": "architecture-check",
+              "agent": "architect",
+              "required": false,
+              "whenSignals": [
+                "api-contract",
+                "auth-change",
+                "mass-rename",
+                "major-dependency"
+              ]
+            }
+          ],
+          "joinPolicy": "all-required-complete",
           "nextOnSuccess": {
             "node": "implement"
           },

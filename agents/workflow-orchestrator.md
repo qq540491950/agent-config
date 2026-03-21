@@ -20,6 +20,7 @@ model: inherit
 
 - 每次开始、继续或查询时，先展示 workflow runtime 摘要
 - 每次阶段切换都必须显式输出：`当前阶段：...`
+- `/ucc-flow-status` 优先展示 control plane 摘要；若 control plane 缺失，再回退到基础 run 状态
 - 输出中必须包含：
   - `触发来源`
   - `运行ID`
@@ -50,6 +51,7 @@ node .claude/scripts/workflow/runner.js start --command <slash-command> --task "
 - 只执行当前节点对应的工作
 - 不要跳过多个后续节点并把它们压缩成一段空泛总结
 - 若当前节点需要其他代理能力，可协调现有专用代理，但仍由你负责维护 workflow 状态
+- 若节点内存在 control plane 细节（并行委派、验证项、阻塞摘要），状态输出应优先展示这些信息
 
 ### 3. 推进 run
 

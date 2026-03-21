@@ -10,6 +10,8 @@ const {
   getRunStatus,
   resumeRun,
   startRun,
+  updateDelegateStatus,
+  updateVerificationStatus,
 } = require('../lib/workflow-runtime')
 
 function parseArgs(argv) {
@@ -39,6 +41,8 @@ function printUsage() {
   console.log('  node .claude/scripts/workflow/runner.js start --command <public-command> [--task <text>]')
   console.log('  node .claude/scripts/workflow/runner.js start --profile <profile> [--entry <command>] [--node <node>] [--task <text>]')
   console.log('  node .claude/scripts/workflow/runner.js advance [--run <runId>] --result <passed|blocked|failed> [--summary <text>] [--artifacts a,b] [--signals s1,s2]')
+  console.log('  node .claude/scripts/workflow/runner.js delegate [--run <runId>] --delegate <id> [--name <name>] [--agent <agent>] [--status <status>] [--required true|false] [--summary <text>] [--signals s1,s2] [--reason <text>]')
+  console.log('  node .claude/scripts/workflow/runner.js verification [--run <runId>] --name <name> [--status <status>] [--source <text>] [--summary <text>] [--signals s1,s2] [--reason <text>]')
   console.log('  node .claude/scripts/workflow/runner.js status [--run <runId>]')
   console.log('  node .claude/scripts/workflow/runner.js continue [--run <runId>]')
   console.log('  node .claude/scripts/workflow/runner.js abort [--run <runId>] [--reason <text>]')
@@ -86,6 +90,30 @@ function main() {
         runId: flags.run || '',
       })
       break
+    case 'delegate':
+      result = updateDelegateStatus({
+        runId: flags.run || '',
+        delegateId: flags.delegate || flags['delegate-id'] || '',
+        name: flags.name || '',
+        agent: flags.agent || '',
+        status: flags.status || 'pending',
+        required: flags.required,
+        summary: flags.summary || '',
+        signals: flags.signals || '',
+        reason: flags.reason || '',
+      })
+      break
+    case 'verification':
+      result = updateVerificationStatus({
+        runId: flags.run || '',
+        name: flags.name || '',
+        status: flags.status || 'pending',
+        source: flags.source || '',
+        summary: flags.summary || '',
+        signals: flags.signals || '',
+        reason: flags.reason || '',
+      })
+      break
     case 'continue':
       result = continueRun({
         runId: flags.run || '',
@@ -106,7 +134,7 @@ function main() {
       throw new Error(`未知命令: ${command}`)
   }
 
-  console.log(formatRunSummary(result.run, { action: result.action }))
+  console.log(formatRunSummary(result.run, { action: result.action, controlPlane: result.controlPlane || null }))
 }
 
 try {

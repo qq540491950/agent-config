@@ -97,8 +97,8 @@ ai-config/
 
 | 命令 | 用途 | 自动链路 |
 |------|------|----------|
-| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划 -> 实施 -> 审查（节点内并行） -> 验证（节点内有限并行） -> 文档 -> 总结 |
-| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划 -> 实施 -> 审查（节点内并行） -> 完整验证（节点内有限并行） -> 文档 -> 质量门禁 -> 总结 |
+| `/ucc-team-standard` | 默认团队交付入口 | 澄清 -> 计划（节点内并行） -> 实施 -> 审查（节点内并行） -> 验证（节点内有限并行） -> 文档 -> 总结 |
+| `/ucc-team-strict` | 高风险严格交付 | 澄清 -> 风险 -> 详细计划（节点内并行） -> 实施 -> 审查（节点内并行） -> 完整验证（节点内有限并行） -> 文档 -> 质量门禁 -> 总结 |
 | `/ucc-team-research` | 团队调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 交接 -> 自动切入 `team.standard.plan` |
 | `/ucc-single-standard` | 单 agent 闭环交付 | 澄清 -> 计划 -> 实施 -> 审查 -> 验证 -> 总结 |
 | `/ucc-single-research` | 单 agent 调研并自动交接实施 | 问题定义 -> 证据 -> 结论 -> 后续动作 -> 自动切入 `single.standard.plan` |
@@ -115,7 +115,7 @@ ai-config/
 
 构建修复、语言专项审查、数据库审查、E2E、文档生成、覆盖率补齐、死代码清理和上下文切换能力仍然保留，但改为由 runtime 按阶段自动调度内部 agent，不再额外占用公开 slash 命令面。
 
-当前团队 workflow 仍是单 active run 的串行主干；最小版并行在 `review` 节点开放并行审查，并在 `team.standard.verify` 与 `team.strict.full-verify` 节点开放有限并行验证，由 `team-orchestrator` 汇总 `code-reviewer`、按需触发的 `security-reviewer` 与命中 `db-migration` 时的 `database-reviewer` 结果后再继续推进。
+当前团队 workflow 仍是单 active run 的串行主干；受控并行在 `team.standard.plan`、`team.strict.detailed-plan`、`review` 与验证节点内开启，由 `team-orchestrator` 负责 fan-out/fan-in 汇总。运行时除 `runs/` 与 `events/` 外，还会在 `.claude/workflows/control/` 下写入可读 control plane 快照，供 `/ucc-flow-status` 展示最近阶段摘要、并行委派状态、验证结果和阻塞原因。
 
 ---
 
@@ -208,9 +208,10 @@ node .claude/scripts/validate-config.js
 1. 优先使用 `/ucc-team-standard`、`/ucc-team-research`、`/ucc-single-standard` 等显式入口。
 2. 检查输出末尾是否出现 `配置标识：UCC`。
 3. 确认项目内存在 `.claude/commands/`、`.claude/agents/` 与 `.claude/workflows/definitions.json`。
-4. 如果使用了 `--claude-mode dotclaude`，确认 `.claude/CLAUDE.md` 已生成；如果使用了 `--claude-mode import-root`，确认根目录 `CLAUDE.md` 或导入片段已就位。
-5. 如果启用了 hooks，确认 `.claude/settings.json` 或 `.claude/settings.local.json` 已生成并合并成功；如果启用了项目级 MCP，再确认项目根 `.mcp.json` 与 `enabledMcpjsonServers` 已写入。
-6. 如果仍未命中，再在请求中补充 `@ucc`。
+4. 如果流程已经运行过，确认 `.claude/workflows/control/latest.json` 能反映最近阶段摘要与状态。
+5. 如果使用了 `--claude-mode dotclaude`，确认 `.claude/CLAUDE.md` 已生成；如果使用了 `--claude-mode import-root`，确认根目录 `CLAUDE.md` 或导入片段已就位。
+6. 如果启用了 hooks，确认 `.claude/settings.json` 或 `.claude/settings.local.json` 已生成并合并成功；如果启用了项目级 MCP，再确认项目根 `.mcp.json` 与 `enabledMcpjsonServers` 已写入。
+7. 如果仍未命中，再在请求中补充 `@ucc`。
 
 ### 注意事项
 
@@ -229,6 +230,7 @@ node .claude/scripts/validate-config.js
 
 ## 版本日志
 
+- **v4.7.0** - 为 workflow runtime 增加 `control/` 控制面快照、扩展 `/ucc-flow-status` 的阶段/委派/验证可观测性，并将 `team.standard.plan` 与 `team.strict.detailed-plan` 升级为受控并行计划节点
 - **v4.6.0** - 在保持单 active run 串行主干不变的前提下，为 `team.standard.verify` 与 `team.strict.full-verify` 增加有限并行验证，并补齐相关测试与文档说明
 - **v4.5.0** - 补齐 `single.standard` 闭环定义，完善 `single.research -> single.standard.plan` 接力说明，同时增强 `validate-config.js` 对 workflow 语义、双 hook 配置与退役命令引用的校验
 - **v4.4.0** - 删除 `.internal` 与 `contexts`，默认部署包不再复制 `docs/` 和 `tests/`，同时让已部署项目中的 `validate-config.js` 支持精简布局校验

@@ -51,9 +51,11 @@ node .claude/scripts/workflow/runner.js start --command <slash-command> --task "
 
 - 只执行当前节点需要的工作
 - 不要把多个后续节点压缩成一次输出
-- 若需要专用代理能力，可协调 `planner`、`tdd-guide`、`code-reviewer`、`doc-updater` 等
+- 若需要专用代理能力，可协调 `planner`、`architect`、`tdd-guide`、`code-reviewer`、`doc-updater` 等
 - 若当前节点声明 `executionStrategy: parallel-delegate`，由你负责读取 `parallelDelegates` 并在当前节点内执行并行委派
-- 审查节点与声明了有限并行验证的 `verify` / `full-verify` 节点都适用该并行委派规则
+- 计划节点、审查节点与声明了有限并行验证的 `verify` / `full-verify` 节点都适用该并行委派规则
+- 委派前后要显式维护 control plane：使用 `runner.js delegate` 记录 `pending/running/completed/blocked/failed/skipped`
+- 验证命令执行后要使用 `runner.js verification` 记录验证项状态和摘要
 - 并行委派完成前不得提前推进 workflow；必须按 `joinPolicy` 汇总必需代理结果后，再调用一次 `advance`
 
 ### 3. 推进节点
@@ -87,6 +89,9 @@ node .claude/scripts/workflow/runner.js advance --run <runId> --result passed --
 - 普通开发任务：提供最小可执行计划
 - 高风险或严格流程：补充设计决策、依赖和风险
 - 复杂任务优先协调 `planner`
+- `plan` / `detailed-plan` 若声明 `parallel-delegate`，默认由你并行协调 `planner`
+- 命中架构类风险信号时，在同一个计划节点内按需并行委派 `architect`
+- 并行计划结束后先汇总计划、风险和验证建议，再推进到实施阶段
 
 ### 3. 实施
 
@@ -147,5 +152,6 @@ node .claude/scripts/workflow/runner.js advance --run <runId> --result passed --
 - 若任务显然更适合现有专用命令，也应说明对应的 UCC 入口
 - `pausePolicy` 命中时必须暂停，而不是继续自动吞掉高风险变更
 - 遇到 `parallel-delegate` 节点时，只允许在当前节点内并行委派，不要创建多个并行 root workflow
+- 计划节点内的并行只产出计划、架构和验证建议，不要在这个阶段并行落生产代码
 - 验证节点内的有限并行验证只允许委派只读型 verifier，不要在这个阶段自动委派 `build-error-resolver` 或 `e2e-runner`
 - `parallelDelegates` 未满足 `joinPolicy` 前，不得推进到下一个节点

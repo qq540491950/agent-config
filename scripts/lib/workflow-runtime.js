@@ -96,8 +96,10 @@ function getWorkflowPaths(options = {}) {
     root,
     runsDir: path.join(root, 'runs'),
     eventsDir: path.join(root, 'events'),
+    controlDir: path.join(root, 'control'),
     locksDir: path.join(root, 'locks'),
     activeFile: path.join(root, 'active.json'),
+    latestControlFile: path.join(root, 'control', 'latest.json'),
   }
 }
 
@@ -106,6 +108,7 @@ function ensureWorkflowLayout(options = {}) {
   ensureDir(paths.root)
   ensureDir(paths.runsDir)
   ensureDir(paths.eventsDir)
+  ensureDir(paths.controlDir)
   ensureDir(paths.locksDir)
   return paths
 }
@@ -118,6 +121,10 @@ function makeEventPath(runId, options = {}) {
   return path.join(getWorkflowPaths(options).eventsDir, `${runId}.ndjson`)
 }
 
+function makeControlPath(runId, options = {}) {
+  return path.join(getWorkflowPaths(options).controlDir, `${runId}.json`)
+}
+
 function appendEvent(runId, event, options = {}) {
   const eventPath = makeEventPath(runId, options)
   appendFile(
@@ -128,6 +135,271 @@ function appendEvent(runId, event, options = {}) {
       ...event,
     }) + '\n',
   )
+}
+
+function buildControlPlaneSnapshot(run) {
+  const history = Array.isArray(run.history) ? run.history.slice(-5) : []
+  const phaseState = run.controlPlane && run.controlPlane.phase ? run.controlPlane.phase : null
+  const blockingState = run.controlPlane && run.controlPlane.blocking ? run.controlPlane.blocking : null
+
+  return {
+    run: {
+      runId: run.runId,
+      profile: run.profile,
+      mode: run.mode,
+      status: run.status,
+      entryCommand: run.entryCommand,
+      currentNode: run.currentNode,
+      currentPhase: run.currentPhase,
+      nextNode: run.nextNode,
+      executionMode: run.executionMode,
+      pausePolicy: run.pausePolicy,
+      updatedAt: run.updatedAt,
+    },
+    phase: {
+      startedAt: phaseState ? phaseState.startedAt : run.startedAt,
+      lastSummary: phaseState ? phaseState.lastSummary : '',
+      lastSignals: phaseState ? phaseState.lastSignals : [],
+      lastArtifacts: phaseState ? phaseState.lastArtifacts : [],
+    },
+    delegates: run.controlPlane && Array.isArray(run.controlPlane.delegates) ? run.controlPlane.delegates : [],
+    verification: run.controlPlane && Array.isArray(run.controlPlane.verification) ? run.controlPlane.verification : [],
+    blocking: {
+      reason: blockingState ? blockingState.reason : '',
+      signals: blockingState ? blockingState.signals : [],
+      failedDelegates: blockingState ? blockingState.failedDelegates : [],
+      updatedAt: blockingState ? blockingState.updatedAt : run.updatedAt,
+    },
+    history,
+  }
+}
+
+function ensureControlPlaneState(run) {
+  if (!run.controlPlane) {
+    run.controlPlane = {}
+  }
+
+  if (!run.controlPlane.phase) {
+    run.controlPlane.phase = {
+      startedAt: run.startedAt || nowIso(),
+      lastSummary: '',
+      lastSignals: [],
+      lastArtifacts: [],
+    }
+  }
+
+  if (!Array.isArray(run.controlPlane.delegates)) {
+    run.controlPlane.delegates = []
+  }
+
+  if (!Array.isArray(run.controlPlane.verification)) {
+    run.controlPlane.verification = []
+  }
+
+  if (!run.controlPlane.blocking) {
+    run.controlPlane.blocking = {
+      reason: '',
+      signals: [],
+      failedDelegates: [],
+      updatedAt: run.updatedAt || nowIso(),
+    }
+  }
+
+  return run.controlPlane
+}
+
+function writeControlPlaneSnapshot(run, options = {}) {
+  const paths = ensureWorkflowLayout(options)
+  ensureControlPlaneState(run)
+  const snapshot = buildControlPlaneSnapshot(run)
+  writeJson(makeControlPath(run.runId, options), snapshot)
+  writeJson(paths.latestControlFile, snapshot)
+  return snapshot
+}
+
+function getControlPlaneSnapshot(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    return null
+  }
+
+  const snapshot = readJson(makeControlPath(runId, options))
+  if (snapshot) {
+    return snapshot
+  }
+
+  const run = loadRun(runId, options)
+  return buildControlPlaneSnapshot(run)
+}
+
+function normalizeBoolean(value, fallback = null) {
+  if (value === true || value === false) return value
+  if (value == null || value === '') return fallback
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+  }
+  return fallback
+}
+
+function updateDelegateStatus(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    throw new Error('delegate 缺少 runId，且当前没有 active run')
+  }
+
+  const delegateId = params.delegateId || params.delegate || params.id || ''
+  if (!delegateId) {
+    throw new Error('delegate 缺少 delegateId')
+  }
+
+  const run = loadRun(runId, options)
+  const controlPlane = ensureControlPlaneState(run)
+  const signals = parseList(params.signals)
+  const now = nowIso()
+  const required = normalizeBoolean(params.required)
+  const name = params.name || ''
+  const agent = params.agent || ''
+  const status = params.status || 'pending'
+  const summary = params.summary
+  const reason = params.reason || ''
+
+  let delegate = controlPlane.delegates.find((item) => item.delegateId === delegateId)
+  if (!delegate) {
+    delegate = {
+      delegateId,
+      name: name || delegateId,
+      agent: agent || '',
+      status: 'pending',
+      required: required === null ? false : required,
+      startedAt: null,
+      finishedAt: null,
+      summary: '',
+      signals: [],
+    }
+    controlPlane.delegates.push(delegate)
+  }
+
+  if (name) delegate.name = name
+  if (agent) delegate.agent = agent
+  if (required !== null) delegate.required = required
+  delegate.status = status
+  if (summary !== undefined) delegate.summary = summary
+  if (params.signals !== undefined) delegate.signals = signals
+
+  if (!delegate.startedAt && status !== 'pending') {
+    delegate.startedAt = now
+  }
+
+  if (['completed', 'blocked', 'failed', 'skipped'].includes(status)) {
+    delegate.finishedAt = now
+  } else if (status === 'running') {
+    delegate.finishedAt = null
+  }
+
+  if (status === 'blocked' || status === 'failed') {
+    const failedDelegates = new Set(controlPlane.blocking.failedDelegates || [])
+    failedDelegates.add(delegateId)
+    controlPlane.blocking = {
+      reason: reason || summary || status,
+      signals,
+      failedDelegates: [...failedDelegates],
+      updatedAt: now,
+    }
+  }
+
+  appendEvent(
+    run.runId,
+    {
+      type: 'delegate',
+      node: run.currentNode,
+      delegateId,
+      name: delegate.name,
+      agent: delegate.agent,
+      status,
+      required: delegate.required,
+      summary: delegate.summary,
+      signals: delegate.signals,
+    },
+    options,
+  )
+
+  return {
+    action: 'delegate-updated',
+    run: saveRun(run, options),
+  }
+}
+
+function updateVerificationStatus(params = {}, options = {}) {
+  const activeMeta = getActiveRunMeta(options)
+  const runId = params.runId || params.run || (activeMeta && activeMeta.runId)
+  if (!runId) {
+    throw new Error('verification 缺少 runId，且当前没有 active run')
+  }
+
+  const name = params.name || params.verification || ''
+  if (!name) {
+    throw new Error('verification 缺少 name')
+  }
+
+  const run = loadRun(runId, options)
+  const controlPlane = ensureControlPlaneState(run)
+  const status = params.status || 'pending'
+  const summary = params.summary
+  const source = params.source
+  const signals = parseList(params.signals)
+  const reason = params.reason || ''
+  const now = nowIso()
+
+  let verification = controlPlane.verification.find((item) => item.name === name)
+  if (!verification) {
+    verification = {
+      name,
+      status: 'pending',
+      source: '',
+      summary: '',
+      signals: [],
+      updatedAt: now,
+    }
+    controlPlane.verification.push(verification)
+  }
+
+  verification.status = status
+  if (source !== undefined) verification.source = source
+  if (summary !== undefined) verification.summary = summary
+  if (params.signals !== undefined) verification.signals = signals
+  verification.updatedAt = now
+
+  if (status === 'failed' || status === 'blocked') {
+    controlPlane.blocking = {
+      reason: reason || summary || status,
+      signals,
+      failedDelegates: controlPlane.blocking.failedDelegates || [],
+      updatedAt: now,
+    }
+  }
+
+  appendEvent(
+    run.runId,
+    {
+      type: 'verification',
+      node: run.currentNode,
+      name,
+      status,
+      source: verification.source,
+      summary: verification.summary,
+      signals: verification.signals,
+    },
+    options,
+  )
+
+  return {
+    action: 'verification-updated',
+    run: saveRun(run, options),
+  }
 }
 
 function getProfile(definitions, profile) {
@@ -234,6 +506,8 @@ function saveRun(run, options = {}) {
       setActiveRunMeta(null, options)
     }
   }
+
+  writeControlPlaneSnapshot(run, options)
 
   return run
 }
@@ -435,6 +709,22 @@ function startRun(params = {}, options = {}) {
     },
     artifacts: [],
     history: [],
+    controlPlane: {
+      phase: {
+        startedAt: nowIso(),
+        lastSummary: '',
+        lastSignals: [],
+        lastArtifacts: [],
+      },
+      delegates: [],
+      verification: [],
+      blocking: {
+        reason: '',
+        signals: [],
+        failedDelegates: [],
+        updatedAt: nowIso(),
+      },
+    },
     startedAt: nowIso(),
     updatedAt: nowIso(),
   }
@@ -489,6 +779,12 @@ function advanceRun(params = {}, options = {}) {
     completedAt: nowIso(),
   })
   run.artifacts.push(...artifacts)
+  run.controlPlane.phase = {
+    startedAt: run.controlPlane.phase.startedAt,
+    lastSummary: summary,
+    lastSignals: signals,
+    lastArtifacts: artifacts,
+  }
 
   if (result === 'failed') {
     run.status = 'failed'
@@ -500,6 +796,12 @@ function advanceRun(params = {}, options = {}) {
       signals,
       pausedAtNode: run.currentNode,
       lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    run.controlPlane.blocking = {
+      reason: pauseReason || signals[0] || 'failed',
+      signals,
+      failedDelegates: [],
+      updatedAt: nowIso(),
     }
     appendEvent(run.runId, { type: 'advance', node: run.currentNode, result, summary, artifacts, signals }, options)
     return {
@@ -519,6 +821,12 @@ function advanceRun(params = {}, options = {}) {
       signals,
       pausedAtNode: run.currentNode,
       lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    run.controlPlane.blocking = {
+      reason: pauseReason || signals[0] || 'blocked',
+      signals,
+      failedDelegates: [],
+      updatedAt: nowIso(),
     }
     appendEvent(run.runId, { type: 'advance', node: run.currentNode, result, summary, artifacts, signals }, options)
     return {
@@ -542,6 +850,12 @@ function advanceRun(params = {}, options = {}) {
       pausedAtNode: null,
       lastContinuedNode: run.pauseState.lastContinuedNode || null,
     }
+    run.controlPlane.blocking = {
+      reason: '',
+      signals: [],
+      failedDelegates: [],
+      updatedAt: nowIso(),
+    }
     appendEvent(run.runId, { type: 'advance', node: completedNode, result, summary, artifacts, signals }, options)
     return {
       action: 'completed',
@@ -563,6 +877,12 @@ function advanceRun(params = {}, options = {}) {
   const followingTransition = normalizeTransition(definitions, nextTransition.profile, nextNodeDef.nextOnSuccess)
   run.nextNode = renderTransition(followingTransition, nextTransition.profile)
   run.nextTransition = followingTransition
+  run.controlPlane.phase = {
+    startedAt: nowIso(),
+    lastSummary: summary,
+    lastSignals: signals,
+    lastArtifacts: artifacts,
+  }
 
   const pauseDecision = computePauseState(definitions, run, signals, pauseReason)
   if (pauseDecision.shouldPause) {
@@ -574,6 +894,12 @@ function advanceRun(params = {}, options = {}) {
       pausedAtNode: run.currentNode,
       lastContinuedNode: run.pauseState.lastContinuedNode || null,
     }
+    run.controlPlane.blocking = {
+      reason: pauseDecision.reason,
+      signals: pauseDecision.signals,
+      failedDelegates: [],
+      updatedAt: nowIso(),
+    }
   } else {
     run.status = 'running'
     run.pauseState = {
@@ -582,6 +908,12 @@ function advanceRun(params = {}, options = {}) {
       signals: [],
       pausedAtNode: null,
       lastContinuedNode: run.pauseState.lastContinuedNode || null,
+    }
+    run.controlPlane.blocking = {
+      reason: '',
+      signals: [],
+      failedDelegates: [],
+      updatedAt: nowIso(),
     }
   }
 
@@ -634,6 +966,12 @@ function continueRun(params = {}, options = {}) {
     pausedAtNode: null,
     lastContinuedNode: run.currentNode,
   }
+  run.controlPlane.blocking = {
+    reason: '',
+    signals: [],
+    failedDelegates: [],
+    updatedAt: nowIso(),
+  }
 
   appendEvent(run.runId, { type: 'continue', node: run.currentNode }, options)
 
@@ -662,6 +1000,12 @@ function abortRun(params = {}, options = {}) {
   run.status = 'aborted'
   run.nextNode = '无'
   run.nextTransition = null
+  run.controlPlane.blocking = {
+    reason,
+    signals: [],
+    failedDelegates: [],
+    updatedAt: nowIso(),
+  }
   appendEvent(run.runId, { type: 'abort', reason }, options)
   return {
     action: 'aborted',
@@ -676,13 +1020,16 @@ function getRunStatus(params = {}, options = {}) {
     return {
       action: 'empty',
       run: null,
+      controlPlane: null,
     }
   }
 
   const run = loadRun(runId, options)
+  const controlPlane = getControlPlaneSnapshot({ runId }, options)
   return {
     action: 'status',
     run,
+    controlPlane,
   }
 }
 
@@ -691,6 +1038,7 @@ function formatRunSummary(run, options = {}) {
     return '当前没有活动 workflow run。'
   }
 
+  const controlPlane = options.controlPlane || buildControlPlaneSnapshot(run)
   const lines = []
   const actionLabel = options.action ? `动作: ${options.action}` : null
   const continueCommand = run.status === 'paused' ? `/ucc-flow-continue ${run.runId}` : '无'
@@ -712,6 +1060,36 @@ function formatRunSummary(run, options = {}) {
   }
   if (run.pauseState && Array.isArray(run.pauseState.signals) && run.pauseState.signals.length > 0) {
     lines.push(`暂停信号: ${run.pauseState.signals.join(', ')}`)
+  }
+  if (controlPlane.phase && controlPlane.phase.lastSummary) {
+    lines.push(`最近阶段摘要: ${controlPlane.phase.lastSummary}`)
+  }
+  if (controlPlane.phase && Array.isArray(controlPlane.phase.lastSignals) && controlPlane.phase.lastSignals.length > 0) {
+    lines.push(`最近阶段信号: ${controlPlane.phase.lastSignals.join(', ')}`)
+  }
+  lines.push('并行委派:')
+  if (Array.isArray(controlPlane.delegates) && controlPlane.delegates.length > 0) {
+    controlPlane.delegates.forEach((delegate) => {
+      const parts = [`- ${delegate.name || delegate.delegateId} [${delegate.status}]`]
+      if (delegate.agent) parts.push(`agent=${delegate.agent}`)
+      if (delegate.required === true) parts.push('required=yes')
+      if (delegate.required === false) parts.push('required=no')
+      if (delegate.summary) parts.push(`summary=${delegate.summary}`)
+      lines.push(parts.join(' '))
+    })
+  } else {
+    lines.push('- 无')
+  }
+  lines.push('验证状态:')
+  if (Array.isArray(controlPlane.verification) && controlPlane.verification.length > 0) {
+    controlPlane.verification.forEach((item) => {
+      const parts = [`- ${item.name} [${item.status}]`]
+      if (item.source) parts.push(`source=${item.source}`)
+      if (item.summary) parts.push(`summary=${item.summary}`)
+      lines.push(parts.join(' '))
+    })
+  } else {
+    lines.push('- 无')
   }
   lines.push(`状态更新时间: ${run.updatedAt}`)
   if (isStale(run)) {
@@ -735,6 +1113,8 @@ module.exports = {
   findProfileByCommand,
   formatRunSummary,
   getActiveRunMeta,
+  getControlPlaneSnapshot,
+  buildControlPlaneSnapshot,
   getDefinitionsPath,
   getModeForProfile,
   getNode,
@@ -755,5 +1135,8 @@ module.exports = {
   saveRun,
   setActiveRunMeta,
   startRun,
+  updateDelegateStatus,
+  updateVerificationStatus,
+  writeControlPlaneSnapshot,
   writeJson,
 }

@@ -53,6 +53,8 @@ node .claude/scripts/workflow/runner.js start --command <slash-command> --task "
 - 不要跳过多个后续节点并把它们压缩成一段空泛总结
 - 若当前节点需要其他代理能力，可协调现有专用代理，但仍由你负责维护 workflow 状态
 - 若节点内存在 control plane 细节（并行委派、验证项、阻塞摘要），状态输出应优先展示这些信息
+- 若节点恢复执行或 handoff 后仍会持续一段时间，必须保持当前节点的 `summary` / `lastSummary` 新鲜，避免 live panel 长时间停留在旧摘要
+- 所有 control plane 更新都必须显式绑定当前节点；不要把前一节点的 delegate 或 verification 结果复用为当前节点状态
 
 ### 3. 推进 run
 
@@ -91,6 +93,8 @@ node .claude/scripts/workflow/runner.js continue --run <runId>
 ```
 
 然后从当前节点继续自动推进，不回退已完成节点。
+
+- `/ucc-flow-continue` 之后如果当前节点仍处于执行中，必须继续更新当前节点的阶段摘要、delegate 摘要或 verification 摘要，直到状态再次变化
 
 ## 重要规则
 

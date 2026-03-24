@@ -13,6 +13,7 @@ const tests = [
   'tests/team-workflow.test.js',
   'tests/workflow-command-metadata.test.js',
   'tests/workflow-runtime.test.js',
+  'tests/workflow-live-status.test.js',
   'tests/copy-config.test.js',
   'tests/copy-config-modes.test.js',
   'tests/settings-merge.test.js',

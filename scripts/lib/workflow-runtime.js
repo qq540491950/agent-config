@@ -244,6 +244,12 @@ function normalizeBoolean(value, fallback = null) {
   return fallback
 }
 
+function normalizeNumber(value, fallback = null) {
+  if (value == null || value === '') return fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 function hasNodeScopedItems(items) {
   return Array.isArray(items) && items.some((item) => item && item.node)
 }
@@ -273,6 +279,43 @@ function findScopedItem(items, matcher, node) {
   }
 
   return null
+}
+
+function applyDelegateDisplayFields(delegate, params = {}) {
+  if (params.progressLabel !== undefined) delegate.progressLabel = String(params.progressLabel || '')
+  if (params.lastSummary !== undefined) delegate.lastSummary = String(params.lastSummary || '')
+  if (params.lastHeartbeatAt !== undefined) delegate.lastHeartbeatAt = String(params.lastHeartbeatAt || '')
+  if (params.displayOrder !== undefined) delegate.displayOrder = normalizeNumber(params.displayOrder)
+  if (params.subagentId !== undefined) delegate.subagentId = String(params.subagentId || '')
+  if (params.ownedPaths !== undefined) delegate.ownedPaths = parseList(params.ownedPaths)
+  if (params.readonlyPaths !== undefined) delegate.readonlyPaths = parseList(params.readonlyPaths)
+}
+
+function applyVerificationDisplayFields(verification, params = {}) {
+  if (params.progressLabel !== undefined) verification.progressLabel = String(params.progressLabel || '')
+  if (params.lastSummary !== undefined) verification.lastSummary = String(params.lastSummary || '')
+}
+
+function getDisplaySummary(item) {
+  if (!item) return ''
+  return item.summary || item.lastSummary || ''
+}
+
+function getDisplayOrder(item) {
+  if (!item) return Number.MAX_SAFE_INTEGER
+  const displayOrder = normalizeNumber(item.displayOrder, Number.MAX_SAFE_INTEGER)
+  return displayOrder === null ? Number.MAX_SAFE_INTEGER : displayOrder
+}
+
+function sortDisplayItems(items) {
+  return [...(Array.isArray(items) ? items : [])].sort((left, right) => {
+    const orderDiff = getDisplayOrder(left) - getDisplayOrder(right)
+    if (orderDiff !== 0) return orderDiff
+
+    const leftLabel = String(left && (left.name || left.delegateId || left.source || '')).toLowerCase()
+    const rightLabel = String(right && (right.name || right.delegateId || right.source || '')).toLowerCase()
+    return leftLabel.localeCompare(rightLabel)
+  })
 }
 
 function updateDelegateStatus(params = {}, options = {}) {
@@ -323,6 +366,7 @@ function updateDelegateStatus(params = {}, options = {}) {
   delegate.status = status
   if (summary !== undefined) delegate.summary = summary
   if (params.signals !== undefined) delegate.signals = signals
+  applyDelegateDisplayFields(delegate, params)
 
   if (!delegate.startedAt && status !== 'pending') {
     delegate.startedAt = now
@@ -356,6 +400,13 @@ function updateDelegateStatus(params = {}, options = {}) {
       status,
       required: delegate.required,
       summary: delegate.summary,
+      progressLabel: delegate.progressLabel || '',
+      lastSummary: delegate.lastSummary || '',
+      lastHeartbeatAt: delegate.lastHeartbeatAt || '',
+      displayOrder: delegate.displayOrder == null ? null : delegate.displayOrder,
+      subagentId: delegate.subagentId || '',
+      ownedPaths: delegate.ownedPaths || [],
+      readonlyPaths: delegate.readonlyPaths || [],
       signals: delegate.signals,
     },
     options,
@@ -408,6 +459,7 @@ function updateVerificationStatus(params = {}, options = {}) {
   if (source !== undefined) verification.source = source
   if (summary !== undefined) verification.summary = summary
   if (params.signals !== undefined) verification.signals = signals
+  applyVerificationDisplayFields(verification, params)
   verification.updatedAt = now
 
   if (status === 'failed' || status === 'blocked') {
@@ -428,6 +480,8 @@ function updateVerificationStatus(params = {}, options = {}) {
       status,
       source: verification.source,
       summary: verification.summary,
+      progressLabel: verification.progressLabel || '',
+      lastSummary: verification.lastSummary || '',
       signals: verification.signals,
     },
     options,
@@ -1076,8 +1130,8 @@ function formatRunSummary(run, options = {}) {
   }
 
   const controlPlane = options.controlPlane || buildControlPlaneSnapshot(run)
-  const currentDelegates = filterItemsForCurrentNode(controlPlane.delegates, run.currentNode)
-  const currentVerification = filterItemsForCurrentNode(controlPlane.verification, run.currentNode)
+  const currentDelegates = sortDisplayItems(filterItemsForCurrentNode(controlPlane.delegates, run.currentNode))
+  const currentVerification = sortDisplayItems(filterItemsForCurrentNode(controlPlane.verification, run.currentNode))
   const lines = []
   const actionLabel = options.action ? `动作: ${options.action}` : null
   const continueCommand = run.status === 'paused' ? `/ucc-flow-continue ${run.runId}` : '无'
@@ -1113,7 +1167,8 @@ function formatRunSummary(run, options = {}) {
       if (delegate.agent) parts.push(`agent=${delegate.agent}`)
       if (delegate.required === true) parts.push('required=yes')
       if (delegate.required === false) parts.push('required=no')
-      if (delegate.summary) parts.push(`summary=${delegate.summary}`)
+      const summary = getDisplaySummary(delegate)
+      if (summary) parts.push(`summary=${summary}`)
       lines.push(parts.join(' '))
     })
   } else {
@@ -1124,7 +1179,8 @@ function formatRunSummary(run, options = {}) {
     currentVerification.forEach((item) => {
       const parts = [`- ${item.name} [${item.status}]`]
       if (item.source) parts.push(`source=${item.source}`)
-      if (item.summary) parts.push(`summary=${item.summary}`)
+      const summary = getDisplaySummary(item)
+      if (summary) parts.push(`summary=${summary}`)
       lines.push(parts.join(' '))
     })
   } else if (run.currentNode) {
@@ -1156,7 +1212,9 @@ module.exports = {
   getActiveRunMeta,
   getControlPlaneSnapshot,
   buildControlPlaneSnapshot,
+  filterItemsForCurrentNode,
   getDefinitionsPath,
+  getDisplaySummary,
   getModeForProfile,
   getNode,
   getPausePolicies,
@@ -1175,6 +1233,7 @@ module.exports = {
   resumeRun,
   saveRun,
   setActiveRunMeta,
+  sortDisplayItems,
   startRun,
   updateDelegateStatus,
   updateVerificationStatus,

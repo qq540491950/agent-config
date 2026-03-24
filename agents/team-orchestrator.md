@@ -55,6 +55,9 @@ node .claude/scripts/workflow/runner.js start --command <slash-command> --task "
 - 若当前节点声明 `executionStrategy: parallel-delegate`，由你负责读取 `parallelDelegates` 并在当前节点内执行并行委派
 - 计划节点、`team.parallel.parallel-implement`、审查节点与声明了有限并行验证的 `verify` / `full-verify` 节点都适用该并行委派规则
 - 委派前后要显式维护 control plane：使用 `runner.js delegate` 记录 `pending/running/completed/blocked/failed/skipped`
+- delegate 从 `pending` 切到 `running` 时，必须立即写入简短但有信息量的 `summary` 或 `lastSummary`，不要只写空状态
+- delegate 进度发生实质变化时，要刷新 `summary` / `lastSummary` / `progressLabel`，不要等到完成后才一次性补写
+- 所有 delegate 与 verification 更新都必须绑定当前节点；没有明确 node 归属时，不要把上一节点的记录带进当前节点
 - 验证命令执行后要使用 `runner.js verification` 记录验证项状态和摘要
 - 并行委派完成前不得提前推进 workflow；必须按 `joinPolicy` 汇总必需代理结果后，再调用一次 `advance`
 - 只有命中 workflow runtime 核心入口时，才允许使用 `config-sensitive` 信号；范围限定为 `.claude/scripts/lib/workflow-runtime.js`、`.claude/scripts/workflow/runner.js`、`.claude/workflows/definitions.json`、`/ucc-flow-status`、`/ucc-flow-continue`、`/ucc-flow-abort`
@@ -115,6 +118,7 @@ node .claude/scripts/workflow/runner.js advance --run <runId> --result passed --
 - 并行委派结束后输出一份汇总审查或验证结论，再进入后续节点
 - 运行适当的验证命令；无法运行时必须说明
 - `/ucc-flow-status` 只应把当前节点的并行委派与验证状态展示给用户，避免把前一节点的记录误显示为当前阻塞
+- 若用户通过 `/ucc-flow-continue` 恢复当前节点，必须继续刷新当前节点的 delegate 摘要与验证摘要，直到该节点推进或再次阻塞
 
 ### 5. 文档同步
 

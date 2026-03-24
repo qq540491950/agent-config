@@ -38,6 +38,7 @@ node .claude/scripts/workflow/runner.js verification --run <runId> --name tsc --
 node .claude/scripts/workflow/runner.js continue --run <runId>
 node .claude/scripts/workflow/runner.js resume --run <runId>
 node .claude/scripts/workflow/runner.js status
+node .claude/scripts/workflow/runner.js watch --run <runId>
 node .claude/scripts/workflow/runner.js abort --run <runId>
 ```
 
@@ -50,4 +51,24 @@ node .claude/scripts/workflow/runner.js abort --run <runId>
 - `continue`：继续一个 `paused` run
 - `resume`：`continue` 的兼容别名
 - `status`：查看当前或指定 run 的最新摘要，优先展示当前节点对应的 control plane；如果当前节点还没有 verification 记录，则明确显示 `当前节点尚未开始验证`
+- `watch`：内部运维观察入口，持续渲染当前或指定 run 的 live status panel；它是对现有 runtime 控制面的只读观察，不新增任何公开 `/ucc-*` 命令
 - `abort`：中止当前或指定 run
+
+## Live Status Panel
+
+`watch` 是一个内部 CLI 观察入口，用来持续渲染当前 run 的：
+
+- 当前节点与下一节点
+- 最近阶段摘要
+- 当前节点的 delegate 状态
+- 当前节点的 verification 状态
+- 当前阻塞原因
+
+约束与非目标：
+
+- 它不是 Claude Code 原生 plan mode，也不尝试复制原生 TUI
+- 它不改变 single-root-run 设计，默认仍只维护一个 active run
+- 它只读取 `.claude/workflows/runs/`、`events/` 与 `control/` 中的现有状态
+- 它优先读取 `control/<runId>.json`；若快照缺失，则回退到 `runs/<runId>.json`
+- 这一层只是 operator aid，不代表已经切换到真实 subagent 编排
+- 渲染格式刻意保持与后续真实 subagent 字段兼容，例如 `subagentId`、`ownedPaths`、`readonlyPaths`

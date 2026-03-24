@@ -175,6 +175,13 @@ try {
       agent: 'planner',
       status: 'running',
       required: true,
+      progressLabel: 'planning',
+      lastSummary: '拆分任务中',
+      lastHeartbeatAt: '2026-03-24T08:00:00.000Z',
+      displayOrder: 10,
+      subagentId: 'agent-plan-primary',
+      ownedPaths: ['workflows/definitions.json'],
+      readonlyPaths: ['docs/使用说明.md'],
     },
     options,
   )
@@ -187,6 +194,13 @@ try {
   assert.strictEqual(planDelegate.status, 'running')
   assert.strictEqual(planDelegate.agent, 'planner')
   assert.strictEqual(planDelegate.required, true)
+  assert.strictEqual(planDelegate.progressLabel, 'planning')
+  assert.strictEqual(planDelegate.lastSummary, '拆分任务中')
+  assert.strictEqual(planDelegate.lastHeartbeatAt, '2026-03-24T08:00:00.000Z')
+  assert.strictEqual(planDelegate.displayOrder, 10)
+  assert.strictEqual(planDelegate.subagentId, 'agent-plan-primary')
+  assert.deepStrictEqual(planDelegate.ownedPaths, ['workflows/definitions.json'])
+  assert.deepStrictEqual(planDelegate.readonlyPaths, ['docs/使用说明.md'])
   assert.ok(planDelegate.startedAt, 'running delegate 应记录 startedAt')
   assert.strictEqual(planDelegate.finishedAt, null)
 
@@ -250,6 +264,8 @@ try {
       status: 'passed',
       source: 'npm run typecheck',
       summary: '0 errors',
+      progressLabel: 'typecheck complete',
+      lastSummary: '类型检查已完成',
     },
     options,
   )
@@ -262,6 +278,8 @@ try {
   assert.strictEqual(tscVerification.status, 'passed')
   assert.strictEqual(tscVerification.source, 'npm run typecheck')
   assert.strictEqual(tscVerification.summary, '0 errors')
+  assert.strictEqual(tscVerification.progressLabel, 'typecheck complete')
+  assert.strictEqual(tscVerification.lastSummary, '类型检查已完成')
 
   const richStatusSummary = runtime.formatRunSummary(verificationUpdated.run, { action: 'status' })
   assert.ok(richStatusSummary.includes('并行委派:'), '状态摘要应包含并行委派区块')

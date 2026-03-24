@@ -33,7 +33,9 @@ const mustHave = [
   'skills/deployment-patterns/SKILL.md',
   'workflows/definitions.json',
   'scripts/lib/workflow-runtime.js',
+  'scripts/workflow/live-status.js',
   'scripts/workflow/runner.js',
+  'tests/workflow-live-status.test.js',
 ]
 
 for (const file of mustHave) {

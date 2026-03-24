@@ -13,6 +13,7 @@ const {
   updateDelegateStatus,
   updateVerificationStatus,
 } = require('../lib/workflow-runtime')
+const { watchRun } = require('./live-status')
 
 function parseArgs(argv) {
   const [command = '', ...rest] = argv
@@ -44,13 +45,14 @@ function printUsage() {
   console.log('  node .claude/scripts/workflow/runner.js delegate [--run <runId>] --delegate <id> [--name <name>] [--agent <agent>] [--status <status>] [--required true|false] [--summary <text>] [--signals s1,s2] [--reason <text>]')
   console.log('  node .claude/scripts/workflow/runner.js verification [--run <runId>] --name <name> [--status <status>] [--source <text>] [--summary <text>] [--signals s1,s2] [--reason <text>]')
   console.log('  node .claude/scripts/workflow/runner.js status [--run <runId>]')
+  console.log('  node .claude/scripts/workflow/runner.js watch [--run <runId>] [--snapshot] [--interval <ms>]')
   console.log('  node .claude/scripts/workflow/runner.js continue [--run <runId>]')
   console.log('  node .claude/scripts/workflow/runner.js abort [--run <runId>] [--reason <text>]')
   console.log('')
   console.log('兼容命令: resume -> continue')
 }
 
-function main() {
+async function main() {
   const { command, flags } = parseArgs(process.argv.slice(2))
 
   if (!command || flags.help) {
@@ -90,6 +92,13 @@ function main() {
         runId: flags.run || '',
       })
       break
+    case 'watch':
+      await watchRun({
+        runId: flags.run || '',
+        snapshot: flags.snapshot === true,
+        intervalMs: flags.interval || '',
+      })
+      return
     case 'delegate':
       result = updateDelegateStatus({
         runId: flags.run || '',
@@ -137,9 +146,7 @@ function main() {
   console.log(formatRunSummary(result.run, { action: result.action, controlPlane: result.controlPlane || null }))
 }
 
-try {
-  main()
-} catch (error) {
+main().catch((error) => {
   console.error(`workflow runner 失败: ${error.message}`)
   process.exit(1)
-}
+})

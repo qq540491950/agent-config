@@ -27,6 +27,25 @@
 - `team.research` 的 `handoff` 会自动切入 `team.standard.plan`
 - `single.research` 的 `next-action` 会自动切入 `single.standard.plan`
 
+## 版本控制建议
+
+`.claude/workflows/` 下同时包含静态定义和运行态状态：
+
+- 静态定义：`definitions.json`、README
+- 运行态状态：`runs/`、`events/`、`control/`、`locks/`、`active.json`
+
+部署到业务项目时，建议忽略运行态状态，但不要忽略整个 `.claude/workflows/` 目录。推荐规则：
+
+```gitignore
+.claude/workflows/runs/
+.claude/workflows/events/
+.claude/workflows/control/
+.claude/workflows/locks/
+.claude/workflows/active.json
+```
+
+忽略版本控制不会影响 `/ucc-flow-continue`，因为文件仍然保留在工作区。真正会影响恢复的是手工删除 `active.json` 或当前 run 对应的 `runs/<runId>.json`。
+
 ## 脚本入口
 
 ```bash

@@ -121,6 +121,23 @@ ai-config/
 
 当前团队 workflow 仍是单 active run 的串行主干；受控并行在 `team.standard.plan`、`team.parallel.parallel-implement`、`team.strict.detailed-plan`、`review` 与验证节点内开启，由 `team-orchestrator` 负责 fan-out/fan-in 汇总。`/ucc-team-parallel` 只用于低冲突、多模块、文件所有权清晰的任务，且必须经过 `integrate` 节点统一收口后才能进入审查。运行时除 `runs/` 与 `events/` 外，还会在 `.claude/workflows/control/` 下写入可读 control plane 快照，供 `/ucc-flow-status` 只展示当前节点对应的最近阶段摘要、并行委派状态、验证结果和阻塞原因；若当前节点尚未开始验证，则会明确显示该空状态。
 
+如果你把 UCC 部署到业务项目，要把 `.claude/workflows/` 里的“静态定义”和“运行态状态”区分开：
+
+- 应继续纳入版本控制：`.claude/workflows/definitions.json`、README 等静态资产
+- 建议忽略版本控制：`.claude/workflows/runs/`、`.claude/workflows/events/`、`.claude/workflows/control/`、`.claude/workflows/locks/`、`.claude/workflows/active.json`
+
+推荐在业务项目的 `.gitignore` 中加入：
+
+```gitignore
+.claude/workflows/runs/
+.claude/workflows/events/
+.claude/workflows/control/
+.claude/workflows/locks/
+.claude/workflows/active.json
+```
+
+忽略这些运行态文件不会影响后续 `/ucc-flow-continue`；真正会影响继续流程的是手工删除当前 run 对应的 `active.json` 或 `runs/<runId>.json`。如果你只想本地忽略、不改团队仓库，可以写到 `.git/info/exclude`。
+
 ---
 
 ## 自动接力模型
@@ -232,9 +249,10 @@ node .claude/scripts/validate-config.js
 2. 检查输出末尾是否出现 `配置标识：UCC`。
 3. 确认项目内存在 `.claude/commands/`、`.claude/agents/` 与 `.claude/workflows/definitions.json`。
 4. 如果流程已经运行过，确认 `.claude/workflows/control/latest.json` 能反映最近阶段摘要与状态。
-5. 如果使用了 `--claude-mode dotclaude`，确认 `.claude/CLAUDE.md` 已生成；如果使用了 `--claude-mode import-root`，确认根目录 `CLAUDE.md` 或导入片段已就位。
-6. 如果启用了 hooks，确认 `.claude/settings.json` 或 `.claude/settings.local.json` 已生成并合并成功；如果启用了项目级 MCP，再确认项目根 `.mcp.json` 与 `enabledMcpjsonServers` 已写入。
-7. 如果仍未命中，再在请求中补充 `@ucc`。
+5. 如果业务项目因为 workflow 中间文件导致 `git status` 变脏，确认你忽略的是运行态目录，而不是整个 `.claude/workflows/`；不要把 `definitions.json` 一起忽略掉。
+6. 如果使用了 `--claude-mode dotclaude`，确认 `.claude/CLAUDE.md` 已生成；如果使用了 `--claude-mode import-root`，确认根目录 `CLAUDE.md` 或导入片段已就位。
+7. 如果启用了 hooks，确认 `.claude/settings.json` 或 `.claude/settings.local.json` 已生成并合并成功；如果启用了项目级 MCP，再确认项目根 `.mcp.json` 与 `enabledMcpjsonServers` 已写入。
+8. 如果仍未命中，再在请求中补充 `@ucc`。
 
 ### 注意事项
 

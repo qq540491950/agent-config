@@ -225,8 +225,14 @@ assert.ok(readme.includes('runtime 核心配置风险'), 'README 应说明 confi
 
 const usageDoc = read('docs/使用说明.md')
 assert.ok(usageDoc.includes('workflow runtime 核心配置风险'), '使用说明应说明 config-sensitive 的收紧语义')
+assert.ok(usageDoc.includes('.claude/workflows/active.json'), '使用说明应说明 workflow 运行态文件的忽略建议')
+assert.ok(usageDoc.includes('忽略版本控制：安全，不影响继续流程'), '使用说明应区分忽略与删除对 continue 的影响')
 
 const workflowReadme = read('workflows/README.md')
 assert.ok(workflowReadme.includes('当前节点尚未开始验证'), 'workflow README 应说明验证空状态语义')
+assert.ok(workflowReadme.includes('## 版本控制建议'), 'workflow README 应补充 workflow 运行态目录的版本控制建议')
+assert.ok(workflowReadme.includes('.claude/workflows/active.json'), 'workflow README 应说明 active.json 的版本控制建议')
+
+assert.ok(readme.includes('.claude/workflows/active.json'), 'README 应说明 workflow 运行态文件的忽略建议')
 
 console.log('workflow-command-metadata.test.js 通过')
